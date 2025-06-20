@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Video, Play, Calendar, User, Trash2, Printer, QrCode } from 'lucide-react';
 import { Clinic, Patient, Video as VideoType } from '@/types';
 import { useToast } from '@/hooks/use-toast';
+import { videoStorage } from '@/utils/videoStorage';
 
 interface AdminClinicVideosDialogProps {
   clinicId: string;

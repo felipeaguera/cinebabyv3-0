@@ -7,6 +7,7 @@ import { Clinic, Patient, Video as VideoType } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import CreateClinicDialog from './CreateClinicDialog';
 import AdminClinicVideosDialog from './AdminClinicVideosDialog';
+import { videoStorage } from '@/utils/videoStorage';
 
 interface ClinicsTabProps {
   clinics: Clinic[];
