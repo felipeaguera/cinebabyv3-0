@@ -93,9 +93,57 @@ class VideoStorage {
       const store = transaction.objectStore(STORE_NAME);
       const request = store.delete(videoId);
       
-      request.onsuccess = () => resolve();
+      request.onsuccess = () => {
+        console.log(`Video ${videoId} deleted from IndexedDB`);
+        resolve();
+      };
       request.onerror = () => reject(request.error);
     });
+  }
+
+  async deleteVideosByPatient(patientId: string): Promise<void> {
+    if (!this.db) await this.init();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction([STORE_NAME], 'readwrite');
+      const store = transaction.objectStore(STORE_NAME);
+      const index = store.index('patientId');
+      const request = index.getAllKeys(patientId);
+      
+      request.onsuccess = () => {
+        const keys = request.result;
+        let deletedCount = 0;
+        
+        if (keys.length === 0) {
+          console.log(`No videos found for patient ${patientId} in IndexedDB`);
+          resolve();
+          return;
+        }
+        
+        keys.forEach((key) => {
+          const deleteRequest = store.delete(key);
+          deleteRequest.onsuccess = () => {
+            deletedCount++;
+            if (deletedCount === keys.length) {
+              console.log(`${deletedCount} videos deleted from IndexedDB for patient ${patientId}`);
+              resolve();
+            }
+          };
+          deleteRequest.onerror = () => reject(deleteRequest.error);
+        });
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async deleteVideosByClinic(clinicId: string, patientIds: string[]): Promise<void> {
+    if (!this.db) await this.init();
+    
+    console.log(`Deleting videos for clinic ${clinicId} with patients:`, patientIds);
+    
+    for (const patientId of patientIds) {
+      await this.deleteVideosByPatient(patientId);
+    }
   }
 
   async getAllVideos(): Promise<Array<{

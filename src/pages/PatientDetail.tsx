@@ -122,12 +122,22 @@ const PatientDetail: React.FC = () => {
     if (!confirm('Tem certeza que deseja excluir este vídeo?')) return;
 
     try {
+      // Delete from IndexedDB
       await videoStorage.deleteVideo(videoId);
+      
+      // Also remove from localStorage as fallback cleanup
+      const allVideos = JSON.parse(localStorage.getItem('cinebaby_videos') || '[]');
+      const updatedVideos = allVideos.filter((v: Video) => v.id !== videoId);
+      localStorage.setItem('cinebaby_videos', JSON.stringify(updatedVideos));
+      
+      console.log(`Video ${videoId} permanently deleted from all storage`);
+      
+      // Reload videos
       await loadVideos();
       
       toast({
         title: "Vídeo excluído!",
-        description: "O vídeo foi removido com sucesso.",
+        description: "O vídeo foi removido permanentemente de todos os locais de armazenamento.",
         variant: "destructive"
       });
     } catch (error) {

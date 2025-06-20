@@ -28,32 +28,52 @@ const ClinicsTab: React.FC<ClinicsTabProps> = ({
   const { toast } = useToast();
   const [selectedClinicId, setSelectedClinicId] = useState<string | null>(null);
 
-  const handleDeleteClinic = (clinicId: string) => {
-    if (!confirm('Tem certeza que deseja excluir esta clínica? Todos os pacientes e vídeos associados também serão removidos.')) {
+  const handleDeleteClinic = async (clinicId: string) => {
+    if (!confirm('Tem certeza que deseja excluir esta clínica? Todos os pacientes e vídeos associados também serão removidos permanentemente.')) {
       return;
     }
 
-    // Remove clinic
-    const updatedClinics = clinics.filter(c => c.id !== clinicId);
-    setClinics(updatedClinics);
-    localStorage.setItem('cinebaby_clinics', JSON.stringify(updatedClinics));
+    try {
+      // Get all patients from this clinic
+      const clinicPatients = patients.filter(p => p.clinicId === clinicId);
+      const clinicPatientIds = clinicPatients.map(p => p.id);
+      
+      console.log(`Deleting clinic ${clinicId} with ${clinicPatients.length} patients and their videos`);
 
-    // Remove patients from this clinic
-    const updatedPatients = patients.filter(p => p.clinicId !== clinicId);
-    setPatients(updatedPatients);
-    localStorage.setItem('cinebaby_patients', JSON.stringify(updatedPatients));
+      // Delete all videos from IndexedDB for this clinic's patients
+      await videoStorage.deleteVideosByClinic(clinicId, clinicPatientIds);
 
-    // Remove videos from patients of this clinic
-    const clinicPatientIds = patients.filter(p => p.clinicId === clinicId).map(p => p.id);
-    const updatedVideos = videos.filter(v => !clinicPatientIds.includes(v.patientId));
-    setVideos(updatedVideos);
-    localStorage.setItem('cinebaby_videos', JSON.stringify(updatedVideos));
+      // Remove videos from localStorage as fallback cleanup
+      const allVideos = JSON.parse(localStorage.getItem('cinebaby_videos') || '[]');
+      const updatedVideos = allVideos.filter((v: VideoType) => !clinicPatientIds.includes(v.patientId));
+      localStorage.setItem('cinebaby_videos', JSON.stringify(updatedVideos));
+      setVideos(updatedVideos);
 
-    toast({
-      title: "Clínica excluída!",
-      description: "A clínica e todos os dados associados foram removidos.",
-      variant: "destructive"
-    });
+      // Remove patients from this clinic
+      const updatedPatients = patients.filter(p => p.clinicId !== clinicId);
+      setPatients(updatedPatients);
+      localStorage.setItem('cinebaby_patients', JSON.stringify(updatedPatients));
+
+      // Remove clinic
+      const updatedClinics = clinics.filter(c => c.id !== clinicId);
+      setClinics(updatedClinics);
+      localStorage.setItem('cinebaby_clinics', JSON.stringify(updatedClinics));
+
+      console.log(`Clinic ${clinicId} and all associated data permanently deleted`);
+
+      toast({
+        title: "Clínica excluída!",
+        description: "A clínica e todos os dados associados foram removidos permanentemente de todos os locais de armazenamento.",
+        variant: "destructive"
+      });
+    } catch (error) {
+      console.error('Error deleting clinic:', error);
+      toast({
+        title: "Erro ao excluir",
+        description: "Não foi possível excluir a clínica completamente. Tente novamente.",
+        variant: "destructive"
+      });
+    }
   };
 
   const getClinicStats = (clinicId: string) => {

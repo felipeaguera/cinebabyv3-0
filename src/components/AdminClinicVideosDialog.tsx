@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -32,20 +31,36 @@ const AdminClinicVideosDialog: React.FC<AdminClinicVideosDialogProps> = ({
     clinicPatients.some(p => p.id === v.patientId)
   );
 
-  const handleDeleteVideo = (videoId: string) => {
+  const handleDeleteVideo = async (videoId: string) => {
     if (!confirm('Tem certeza que deseja excluir este vídeo?')) {
       return;
     }
 
-    const updatedVideos = videos.filter(v => v.id !== videoId);
-    setVideos(updatedVideos);
-    localStorage.setItem('cinebaby_videos', JSON.stringify(updatedVideos));
+    try {
+      // Delete from IndexedDB
+      await videoStorage.deleteVideo(videoId);
+      
+      // Also remove from localStorage as fallback cleanup
+      const allVideos = JSON.parse(localStorage.getItem('cinebaby_videos') || '[]');
+      const updatedVideos = allVideos.filter((v: VideoType) => v.id !== videoId);
+      localStorage.setItem('cinebaby_videos', JSON.stringify(updatedVideos));
+      setVideos(updatedVideos);
 
-    toast({
-      title: "Vídeo excluído!",
-      description: "O vídeo foi removido permanentemente.",
-      variant: "destructive"
-    });
+      console.log(`Video ${videoId} permanently deleted from all storage locations`);
+
+      toast({
+        title: "Vídeo excluído!",
+        description: "O vídeo foi removido permanentemente de todos os locais de armazenamento.",
+        variant: "destructive"
+      });
+    } catch (error) {
+      console.error('Error deleting video:', error);
+      toast({
+        title: "Erro ao excluir",
+        description: "Não foi possível excluir o vídeo completamente. Tente novamente.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handlePrintQRCode = (patient: Patient) => {
