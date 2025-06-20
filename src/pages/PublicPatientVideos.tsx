@@ -13,11 +13,15 @@ const PublicPatientVideos: React.FC = () => {
   const [videos, setVideos] = useState<Video[]>([]);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [isVideoPlayerOpen, setIsVideoPlayerOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     console.log('PublicPatientVideos - patientId from URL:', patientId);
-    loadPatientData();
-    loadVideos();
+    if (patientId) {
+      loadPatientData();
+      loadVideos();
+    }
+    setLoading(false);
   }, [patientId]);
 
   const loadPatientData = () => {
@@ -26,36 +30,55 @@ const PublicPatientVideos: React.FC = () => {
       return;
     }
     
-    const patients = JSON.parse(localStorage.getItem('cinebaby_patients') || '[]');
-    console.log('PublicPatientVideos - All patients in localStorage:', patients);
-    console.log('PublicPatientVideos - Looking for patient with ID:', patientId);
-    
-    const foundPatient = patients.find((p: Patient) => p.id === patientId);
-    console.log('PublicPatientVideos - Found patient:', foundPatient);
-    
-    if (foundPatient) {
-      setPatient(foundPatient);
+    try {
+      const patients = JSON.parse(localStorage.getItem('cinebaby_patients') || '[]');
+      console.log('PublicPatientVideos - All patients in localStorage:', patients);
+      console.log('PublicPatientVideos - Looking for patient with ID:', patientId);
+      
+      // Buscar paciente tanto por string quanto por number
+      const foundPatient = patients.find((p: Patient) => 
+        p.id === patientId || p.id === String(patientId) || String(p.id) === patientId
+      );
+      
+      console.log('PublicPatientVideos - Found patient:', foundPatient);
+      
+      if (foundPatient) {
+        setPatient(foundPatient);
+      } else {
+        console.log('PublicPatientVideos - Patient not found in localStorage');
+      }
+    } catch (error) {
+      console.error('PublicPatientVideos - Error loading patient data:', error);
     }
   };
 
   const loadVideos = () => {
     if (!patientId) return;
     
-    const allVideos = JSON.parse(localStorage.getItem('cinebaby_videos') || '[]');
-    console.log('PublicPatientVideos - All videos in localStorage:', allVideos);
-    const patientVideos = allVideos.filter((v: Video) => v.patientId === patientId);
-    console.log('PublicPatientVideos - Patient videos:', patientVideos);
-    
-    // Filtrar apenas vídeos com URLs válidas
-    const validVideos = patientVideos.filter((video: Video) => {
-      const isValid = video.fileUrl && video.fileUrl.trim() !== '';
-      if (!isValid) {
-        console.log('PublicPatientVideos - Invalid video URL for video:', video.fileName);
-      }
-      return isValid;
-    });
-    
-    setVideos(validVideos);
+    try {
+      const allVideos = JSON.parse(localStorage.getItem('cinebaby_videos') || '[]');
+      console.log('PublicPatientVideos - All videos in localStorage:', allVideos);
+      
+      // Buscar vídeos tanto por string quanto por number
+      const patientVideos = allVideos.filter((v: Video) => 
+        v.patientId === patientId || v.patientId === String(patientId) || String(v.patientId) === patientId
+      );
+      
+      console.log('PublicPatientVideos - Patient videos:', patientVideos);
+      
+      // Filtrar apenas vídeos com URLs válidas
+      const validVideos = patientVideos.filter((video: Video) => {
+        const isValid = video.fileUrl && video.fileUrl.trim() !== '';
+        if (!isValid) {
+          console.log('PublicPatientVideos - Invalid video URL for video:', video.fileName);
+        }
+        return isValid;
+      });
+      
+      setVideos(validVideos);
+    } catch (error) {
+      console.error('PublicPatientVideos - Error loading videos:', error);
+    }
   };
 
   const handlePlayVideo = (video: Video) => {
@@ -81,6 +104,21 @@ const PublicPatientVideos: React.FC = () => {
     });
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-cinebaby-purple/5 to-cinebaby-teal/5 flex items-center justify-center p-4">
+        <Card className="max-w-sm w-full mx-4">
+          <CardContent className="p-6 text-center">
+            <div className="w-16 h-16 bg-cinebaby-purple/10 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+              <Heart className="h-8 w-8 text-cinebaby-purple" />
+            </div>
+            <p className="text-sm text-gray-600">Carregando...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (!patient) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-cinebaby-purple/5 to-cinebaby-teal/5 flex items-center justify-center p-4">
@@ -98,6 +136,12 @@ const PublicPatientVideos: React.FC = () => {
             <p className="text-xs text-gray-500 font-mono break-all bg-gray-50 p-2 rounded">
               ID: {patientId}
             </p>
+            <Button 
+              className="mt-4 bg-cinebaby-gradient hover:opacity-90"
+              onClick={() => window.location.reload()}
+            >
+              Tentar novamente
+            </Button>
           </CardContent>
         </Card>
       </div>
