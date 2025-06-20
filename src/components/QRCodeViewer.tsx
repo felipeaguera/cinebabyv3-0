@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { QrCode, Copy, Download } from 'lucide-react';
 import { Patient } from '@/types';
 import { useToast } from '@/hooks/use-toast';
+import { isValidUUID, isLegacyId } from '@/utils/uuid';
 
 interface QRCodeViewerProps {
   patient: Patient | null;
@@ -17,11 +18,11 @@ const QRCodeViewer: React.FC<QRCodeViewerProps> = ({ patient, isOpen, onClose })
 
   if (!patient) return null;
 
-  // Verificar se o ID é um UUID válido
-  const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(patient.id);
+  // Verificar se o ID é válido (UUID ou ID legado)
+  const isValidId = isValidUUID(patient.id) || isLegacyId(patient.id);
   
-  if (!isValidUUID) {
-    console.error('QRCodeViewer - Invalid UUID format:', patient.id);
+  if (!isValidId) {
+    console.error('QRCodeViewer - Invalid ID format:', patient.id);
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-md">
@@ -36,7 +37,7 @@ const QRCodeViewer: React.FC<QRCodeViewerProps> = ({ patient, isOpen, onClose })
           </DialogHeader>
           <div className="text-center p-4">
             <p className="text-sm text-gray-600 mb-4">
-              O ID da paciente não está no formato UUID válido.
+              O ID da paciente não está em um formato válido.
             </p>
             <p className="text-xs text-gray-500 font-mono break-all">
               ID atual: {patient.id}
@@ -47,14 +48,14 @@ const QRCodeViewer: React.FC<QRCodeViewerProps> = ({ patient, isOpen, onClose })
     );
   }
 
-  // Usar o UUID real do paciente para gerar o link
+  // Usar o ID real do paciente para gerar o link
   const baseUrl = window.location.origin;
   const patientVideoUrl = `${baseUrl}/paciente/${patient.id}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(patientVideoUrl)}`;
 
-  console.log('QRCodeViewer - Patient UUID:', patient.id);
+  console.log('QRCodeViewer - Patient ID:', patient.id);
+  console.log('QRCodeViewer - ID Type:', isValidUUID(patient.id) ? 'UUID' : 'Legacy');
   console.log('QRCodeViewer - Generated URL for patient videos:', patientVideoUrl);
-  console.log('QRCodeViewer - QR Code URL:', qrCodeUrl);
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(patientVideoUrl);
@@ -116,7 +117,9 @@ const QRCodeViewer: React.FC<QRCodeViewerProps> = ({ patient, isOpen, onClose })
           <div className="text-center space-y-2">
             <h3 className="font-medium text-gray-900">{patient.name}</h3>
             <p className="text-sm text-gray-600">{patient.phone}</p>
-            <p className="text-xs text-gray-500 font-mono">ID: {patient.id}</p>
+            <p className="text-xs text-gray-500 font-mono">
+              ID: {patient.id} {isValidUUID(patient.id) ? '(UUID)' : '(Legacy)'}
+            </p>
           </div>
 
           {/* Actions */}

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Play, Heart, X, Smartphone, ArrowLeft } from 'lucide-react';
 import { Patient, Video } from '@/types';
+import { isValidUUID, isLegacyId } from '@/utils/uuid';
 
 const PacientePublico: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -18,19 +18,20 @@ const PacientePublico: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log('PacientePublico - Patient UUID from URL:', id);
+    console.log('PacientePublico - Patient ID from URL:', id);
     
-    // Verificar se o ID da URL é um UUID válido
+    // Verificar se o ID da URL é válido (UUID ou ID legado)
     if (id) {
-      const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+      const isValidId = isValidUUID(id) || isLegacyId(id);
       
-      if (!isValidUUID) {
-        console.log('PacientePublico - Invalid UUID format:', id);
+      if (!isValidId) {
+        console.log('PacientePublico - Invalid ID format:', id);
         setError('ID da paciente inválido');
         setLoading(false);
         return;
       }
       
+      console.log('PacientePublico - ID Type:', isValidUUID(id) ? 'UUID' : 'Legacy');
       loadPatientAndVideos();
     } else {
       setError('ID da paciente não fornecido');
