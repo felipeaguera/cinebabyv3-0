@@ -75,29 +75,34 @@ const PatientDetail: React.FC = () => {
     
     if (!selectedFile || !patientId) return;
 
-    // Create a blob URL for the video file
-    const videoUrl = URL.createObjectURL(selectedFile);
+    // Criar um FileReader para converter o arquivo em base64
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64Data = event.target?.result as string;
+      
+      const newVideo: Video = {
+        id: Date.now().toString(),
+        patientId,
+        fileName: selectedFile.name,
+        fileUrl: base64Data, // Usar base64 em vez de blob URL
+        uploadedAt: new Date().toISOString()
+      };
 
-    const newVideo: Video = {
-      id: Date.now().toString(),
-      patientId,
-      fileName: selectedFile.name,
-      fileUrl: videoUrl,
-      uploadedAt: new Date().toISOString()
+      const allVideos = JSON.parse(localStorage.getItem('cinebaby_videos') || '[]');
+      const updatedVideos = [...allVideos, newVideo];
+      localStorage.setItem('cinebaby_videos', JSON.stringify(updatedVideos));
+
+      setVideos([...videos, newVideo]);
+      setSelectedFile(null);
+      setIsUploadDialogOpen(false);
+      
+      toast({
+        title: "Vídeo enviado!",
+        description: "O vídeo foi adicionado com sucesso.",
+      });
     };
-
-    const allVideos = JSON.parse(localStorage.getItem('cinebaby_videos') || '[]');
-    const updatedVideos = [...allVideos, newVideo];
-    localStorage.setItem('cinebaby_videos', JSON.stringify(updatedVideos));
-
-    setVideos([...videos, newVideo]);
-    setSelectedFile(null);
-    setIsUploadDialogOpen(false);
     
-    toast({
-      title: "Vídeo enviado!",
-      description: "O vídeo foi adicionado com sucesso.",
-    });
+    reader.readAsDataURL(selectedFile);
   };
 
   const handleDeleteVideo = (videoId: string) => {
@@ -415,7 +420,6 @@ const PatientDetail: React.FC = () => {
             {selectedVideo && (
               <div className="aspect-video bg-black rounded-lg overflow-hidden">
                 <video 
-                  key={selectedVideo.id}
                   src={selectedVideo.fileUrl} 
                   controls 
                   autoPlay
@@ -423,7 +427,10 @@ const PatientDetail: React.FC = () => {
                   preload="metadata"
                   onLoadStart={() => console.log('Video loading started')}
                   onCanPlay={() => console.log('Video can play')}
-                  onError={(e) => console.error('Video error:', e)}
+                  onError={(e) => {
+                    console.error('Video error:', e);
+                    console.error('Video URL that failed:', selectedVideo.fileUrl);
+                  }}
                   onLoadedData={() => console.log('Video data loaded')}
                 >
                   Seu navegador não suporta a reprodução de vídeo.

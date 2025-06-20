@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,11 +45,28 @@ const PublicPatientVideos: React.FC = () => {
     console.log('PublicPatientVideos - All videos in localStorage:', allVideos);
     const patientVideos = allVideos.filter((v: Video) => v.patientId === patientId);
     console.log('PublicPatientVideos - Patient videos:', patientVideos);
-    setVideos(patientVideos);
+    
+    // Filtrar apenas vídeos com URLs válidas
+    const validVideos = patientVideos.filter((video: Video) => {
+      const isValid = video.fileUrl && video.fileUrl.trim() !== '';
+      if (!isValid) {
+        console.log('PublicPatientVideos - Invalid video URL for video:', video.fileName);
+      }
+      return isValid;
+    });
+    
+    setVideos(validVideos);
   };
 
   const handlePlayVideo = (video: Video) => {
     console.log('PublicPatientVideos - Playing video:', video.fileName, 'URL:', video.fileUrl);
+    
+    // Verificar se a URL do vídeo ainda é válida
+    if (!video.fileUrl || video.fileUrl.trim() === '') {
+      console.error('PublicPatientVideos - Invalid video URL');
+      return;
+    }
+    
     setSelectedVideo(video);
     setIsVideoPlayerOpen(true);
   };
@@ -134,21 +152,12 @@ const PublicPatientVideos: React.FC = () => {
                   <Card key={video.id} className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => handlePlayVideo(video)}>
                     <CardContent className="p-4">
                       <div className="aspect-video bg-gradient-to-br from-cinebaby-purple/10 to-cinebaby-teal/10 rounded-lg mb-4 flex items-center justify-center relative overflow-hidden">
-                        {video.fileUrl ? (
-                          <video 
-                            src={video.fileUrl} 
-                            className="w-full h-full object-cover"
-                            poster=""
-                            preload="metadata"
-                          />
-                        ) : (
-                          <Play className="h-12 w-12 text-cinebaby-purple" />
-                        )}
                         <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                           <div className="bg-white/90 rounded-full p-3">
                             <Play className="h-8 w-8 text-cinebaby-purple" />
                           </div>
                         </div>
+                        <Play className="h-12 w-12 text-cinebaby-purple" />
                       </div>
                       <h4 className="font-medium mb-2 text-center" title={video.fileName}>
                         Vídeo do Ultrassom
@@ -196,20 +205,31 @@ const PublicPatientVideos: React.FC = () => {
           
           {selectedVideo && (
             <div className="aspect-video bg-black rounded-lg overflow-hidden">
-              <video 
-                key={selectedVideo.id}
-                src={selectedVideo.fileUrl} 
-                controls 
-                autoPlay
-                className="w-full h-full"
-                preload="metadata"
-                onLoadStart={() => console.log('PublicPatientVideos - Video loading started')}
-                onCanPlay={() => console.log('PublicPatientVideos - Video can play')}
-                onError={(e) => console.error('PublicPatientVideos - Video error:', e)}
-                onLoadedData={() => console.log('PublicPatientVideos - Video data loaded')}
-              >
-                Seu navegador não suporta a reprodução de vídeo.
-              </video>
+              {selectedVideo.fileUrl ? (
+                <video 
+                  src={selectedVideo.fileUrl} 
+                  controls 
+                  autoPlay
+                  className="w-full h-full"
+                  preload="metadata"
+                  onLoadStart={() => console.log('PublicPatientVideos - Video loading started')}
+                  onCanPlay={() => console.log('PublicPatientVideos - Video can play')}
+                  onError={(e) => {
+                    console.error('PublicPatientVideos - Video error:', e);
+                    console.error('PublicPatientVideos - Video URL that failed:', selectedVideo.fileUrl);
+                  }}
+                  onLoadedData={() => console.log('PublicPatientVideos - Video data loaded')}
+                >
+                  Seu navegador não suporta a reprodução de vídeo.
+                </video>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-white">
+                  <div className="text-center">
+                    <Play className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                    <p>Vídeo indisponível</p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
