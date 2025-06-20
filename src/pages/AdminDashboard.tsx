@@ -12,23 +12,45 @@ const AdminDashboard: React.FC = () => {
   const [patients, setPatients] = useState<Patient[]>([]);
 
   useEffect(() => {
+    // Clear all demonstration data from localStorage
+    localStorage.removeItem('cinebaby_clinics');
+    localStorage.removeItem('cinebaby_patients');
+    localStorage.removeItem('cinebaby_videos');
+    
+    // Clear IndexedDB demonstration data
+    clearIndexedDBData();
+    
     loadData();
   }, []);
 
+  const clearIndexedDBData = async () => {
+    try {
+      const dbs = await indexedDB.databases();
+      for (const db of dbs) {
+        if (db.name === 'cinebaby_videos') {
+          const deleteReq = indexedDB.deleteDatabase(db.name);
+          deleteReq.onsuccess = () => console.log('IndexedDB cleared');
+        }
+      }
+    } catch (error) {
+      console.log('Error clearing IndexedDB:', error);
+    }
+  };
+
   const loadData = () => {
-    // Load clinics
+    // Load clinics (will be empty after clearing)
     const storedClinics = localStorage.getItem('cinebaby_clinics');
     if (storedClinics) {
       setClinics(JSON.parse(storedClinics));
     }
 
-    // Load patients
+    // Load patients (will be empty after clearing)
     const storedPatients = localStorage.getItem('cinebaby_patients');
     if (storedPatients) {
       setPatients(JSON.parse(storedPatients));
     }
 
-    // Load videos
+    // Load videos (will be empty after clearing)
     const storedVideos = localStorage.getItem('cinebaby_videos');
     if (storedVideos) {
       setVideos(JSON.parse(storedVideos));
