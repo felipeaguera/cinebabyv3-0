@@ -34,24 +34,29 @@ const PublicPatientVideos: React.FC = () => {
     try {
       const patients = JSON.parse(localStorage.getItem('cinebaby_patients') || '[]');
       console.log('PublicPatientVideos - All patients in localStorage:', patients);
-      console.log('PublicPatientVideos - Looking for patient with ID:', patientId);
+      console.log('PublicPatientVideos - Looking for patient with ID:', patientId, 'Type:', typeof patientId);
       
-      // Buscar paciente por ID exato (string e number)
+      // Buscar paciente por ID exato - melhorar a comparação
       const foundPatient = patients.find((p: Patient) => {
-        const matches = p.id === patientId || String(p.id) === String(patientId);
+        const patientIdStr = String(p.id);
+        const searchIdStr = String(patientId);
+        const matches = patientIdStr === searchIdStr;
+        
+        console.log(`PublicPatientVideos - Comparing patient ID "${patientIdStr}" with search ID "${searchIdStr}": ${matches}`);
+        
         if (matches) {
           console.log('PublicPatientVideos - Found matching patient:', p);
         }
         return matches;
       });
       
-      console.log('PublicPatientVideos - Found patient:', foundPatient);
+      console.log('PublicPatientVideos - Final found patient:', foundPatient);
       
       if (foundPatient) {
         setPatient(foundPatient);
       } else {
         console.log('PublicPatientVideos - Patient not found in localStorage');
-        console.log('PublicPatientVideos - Available patient IDs:', patients.map((p: Patient) => p.id));
+        console.log('PublicPatientVideos - Available patient IDs:', patients.map((p: Patient) => ({ id: p.id, type: typeof p.id, name: p.name })));
       }
     } catch (error) {
       console.error('PublicPatientVideos - Error loading patient data:', error);
@@ -82,14 +87,17 @@ const PublicPatientVideos: React.FC = () => {
     } catch (error) {
       console.error('PublicPatientVideos - Error loading videos from IndexedDB:', error);
       
-      // Fallback to localStorage
+      // Fallback to localStorage with improved ID matching
       try {
         const allVideos = JSON.parse(localStorage.getItem('cinebaby_videos') || '[]');
         console.log('PublicPatientVideos - All videos in localStorage:', allVideos);
         
-        // Buscar vídeos por ID da paciente (string e number)
+        // Buscar vídeos por ID da paciente com comparação melhorada
         const patientVideos = allVideos.filter((v: Video) => {
-          const matches = v.patientId === patientId || String(v.patientId) === String(patientId);
+          const videoPatientIdStr = String(v.patientId);
+          const searchIdStr = String(patientId);
+          const matches = videoPatientIdStr === searchIdStr;
+          
           if (matches) {
             console.log('PublicPatientVideos - Found matching video for patient:', v);
           }
