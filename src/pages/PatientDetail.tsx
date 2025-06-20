@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -401,10 +402,15 @@ const PatientDetail: React.FC = () => {
             {selectedVideo && (
               <div className="aspect-video bg-black rounded-lg overflow-hidden">
                 <video 
+                  key={selectedVideo.id}
                   src={selectedVideo.fileUrl} 
                   controls 
                   className="w-full h-full"
-                  autoPlay
+                  preload="metadata"
+                  onLoadStart={() => console.log('Video loading started')}
+                  onCanPlay={() => console.log('Video can play')}
+                  onError={(e) => console.error('Video error:', e)}
+                  onLoadedData={() => console.log('Video data loaded')}
                 >
                   Seu navegador não suporta a reprodução de vídeo.
                 </video>
