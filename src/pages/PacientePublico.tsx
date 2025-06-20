@@ -1,15 +1,33 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Play, Heart, X, Smartphone, ArrowLeft } from 'lucide-react';
-import { Patient, Video } from '@/types';
-import { isValidUUID, isLegacyId } from '@/utils/uuid';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+
+interface Patient {
+  id: string;
+  name: string;
+  phone: string;
+  clinic_id: string;
+  created_at: string;
+}
+
+interface Video {
+  id: string;
+  patient_id: string;
+  file_name: string;
+  file_url: string;
+  uploaded_at: string;
+}
 
 const PacientePublico: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [patient, setPatient] = useState<Patient | null>(null);
   const [videos, setVideos] = useState<Video[]>([]);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
@@ -20,18 +38,7 @@ const PacientePublico: React.FC = () => {
   useEffect(() => {
     console.log('PacientePublico - Patient ID from URL:', id);
     
-    // Verificar se o ID da URL é válido (UUID ou ID legado)
     if (id) {
-      const isValidId = isValidUUID(id) || isLegacyId(id);
-      
-      if (!isValidId) {
-        console.log('PacientePublico - Invalid ID format:', id);
-        setError('ID da paciente inválido');
-        setLoading(false);
-        return;
-      }
-      
-      console.log('PacientePublico - ID Type:', isValidUUID(id) ? 'UUID' : 'Legacy');
       loadPatientAndVideos();
     } else {
       setError('ID da paciente não fornecido');
@@ -45,34 +52,37 @@ const PacientePublico: React.FC = () => {
     try {
       setLoading(true);
       
-      // TODO: Substituir por consulta real ao Supabase quando integrado
-      // const { data: paciente, error: patientError } = await supabase
-      //   .from("pacientes")
-      //   .select("*")
-      //   .eq("id", id)
-      //   .single();
-      
-      // Por enquanto, buscar no localStorage como fallback
-      const patients = JSON.parse(localStorage.getItem('cinebaby_patients') || '[]');
-      console.log('PacientePublico - Searching for patient with UUID:', id);
-      
-      // Buscar paciente pelo UUID exato
-      const foundPatient = patients.find((p: Patient) => p.id === id);
-      
-      if (foundPatient) {
-        console.log('PacientePublico - Patient found:', foundPatient);
-        setPatient(foundPatient);
+      // Buscar paciente no Supabase
+      const { data: paciente, error: patientError } = await supabase
+        .from("patients")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (patientError) {
+        console.error('PacientePublico - Error loading patient:', patientError);
+        setError('Paciente não encontrada');
+        return;
+      }
+
+      if (paciente) {
+        console.log('PacientePublico - Patient found:', paciente);
+        setPatient(paciente);
         
         // Carregar vídeos da paciente
         await loadVideos(id);
       } else {
-        console.log('PacientePublico - Patient not found with UUID:', id);
-        console.log('PacientePublico - Available patients:', patients.map(p => ({ id: p.id, name: p.name })));
+        console.log('PacientePublico - Patient not found with ID:', id);
         setError('Paciente não encontrada');
       }
     } catch (error) {
       console.error('PacientePublico - Error loading patient:', error);
       setError('Erro ao carregar dados da paciente');
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar dados da paciente",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -80,25 +90,27 @@ const PacientePublico: React.FC = () => {
 
   const loadVideos = async (patientId: string) => {
     try {
-      // TODO: Substituir por consulta real ao Supabase quando integrado
-      // const { data: videos, error: videosError } = await supabase
-      //   .from("videos")
-      //   .select("*")
-      //   .eq("patient_id", patientId);
-      
-      // Por enquanto, buscar no localStorage e IndexedDB como fallback
-      const allVideos = JSON.parse(localStorage.getItem('cinebaby_videos') || '[]');
-      const patientVideos = allVideos.filter((v: Video) => v.patientId === patientId);
-      
-      console.log('PacientePublico - Videos found for patient:', patientVideos.length);
-      setVideos(patientVideos);
+      // Buscar vídeos no Supabase
+      const { data: videos, error: videosError } = await supabase
+        .from("videos")
+        .select("*")
+        .eq("patient_id", patientId)
+        .order("uploaded_at", { ascending: false });
+
+      if (videosError) {
+        console.error('PacientePublico - Error loading videos:', videosError);
+        return;
+      }
+
+      console.log('PacientePublico - Videos found for patient:', videos?.length || 0);
+      setVideos(videos || []);
     } catch (error) {
       console.error('PacientePublico - Error loading videos:', error);
     }
   };
 
   const handlePlayVideo = (video: Video) => {
-    console.log('PacientePublico - Playing video:', video.fileName);
+    console.log('PacientePublico - Playing video:', video.file_name);
     setSelectedVideo(video);
     setIsVideoPlayerOpen(true);
   };
@@ -177,7 +189,7 @@ const PacientePublico: React.FC = () => {
             </p>
             <div className="flex items-center justify-center mt-2 text-xs text-gray-500">
               <Smartphone className="h-3 w-3 mr-1" />
-              Paciente UUID: {patient.id}
+              Paciente ID: {patient.id}
             </div>
           </div>
         </div>
@@ -221,7 +233,7 @@ const PacientePublico: React.FC = () => {
                         Vídeo do Ultrassom
                       </h4>
                       <p className="text-xs sm:text-sm text-gray-500 text-center">
-                        {formatDate(video.uploadedAt)}
+                        {formatDate(video.uploaded_at)}
                       </p>
                     </CardContent>
                   </Card>
@@ -258,15 +270,15 @@ const PacientePublico: React.FC = () => {
               </Button>
             </div>
             <DialogDescription className="text-xs sm:text-sm">
-              {selectedVideo && formatDate(selectedVideo.uploadedAt)}
+              {selectedVideo && formatDate(selectedVideo.uploaded_at)}
             </DialogDescription>
           </DialogHeader>
           
           {selectedVideo && (
             <div className="aspect-video bg-black rounded-lg overflow-hidden">
-              {selectedVideo.fileUrl ? (
+              {selectedVideo.file_url ? (
                 <video 
-                  src={selectedVideo.fileUrl} 
+                  src={selectedVideo.file_url} 
                   controls 
                   autoPlay
                   className="w-full h-full"

@@ -9,7 +9,100 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      clinics: {
+        Row: {
+          address: string
+          city: string
+          created_at: string
+          email: string
+          id: string
+          name: string
+          password: string
+        }
+        Insert: {
+          address: string
+          city: string
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          password: string
+        }
+        Update: {
+          address?: string
+          city?: string
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          password?: string
+        }
+        Relationships: []
+      }
+      patients: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          id: string
+          name: string
+          phone: string
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          id?: string
+          name: string
+          phone: string
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          phone?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patients_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      videos: {
+        Row: {
+          file_name: string
+          file_url: string
+          id: string
+          patient_id: string
+          uploaded_at: string
+        }
+        Insert: {
+          file_name: string
+          file_url: string
+          id?: string
+          patient_id: string
+          uploaded_at?: string
+        }
+        Update: {
+          file_name?: string
+          file_url?: string
+          id?: string
+          patient_id?: string
+          uploaded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "videos_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
