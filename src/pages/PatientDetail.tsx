@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import Layout from '@/components/Layout';
+import QRCodeViewer from '@/components/QRCodeViewer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -18,6 +19,7 @@ const PatientDetail: React.FC = () => {
   const [patient, setPatient] = useState<Patient | null>(null);
   const [videos, setVideos] = useState<Video[]>([]);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [isQRViewerOpen, setIsQRViewerOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const { toast } = useToast();
 
@@ -111,6 +113,7 @@ const PatientDetail: React.FC = () => {
     localStorage.setItem('cinebaby_patients', JSON.stringify(updatedPatients));
     
     setPatient(updatedPatient);
+    setIsQRViewerOpen(true);
     
     toast({
       title: "QR Code gerado!",
@@ -327,6 +330,13 @@ const PatientDetail: React.FC = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* QR Code Viewer Dialog */}
+        <QRCodeViewer
+          patient={patient}
+          isOpen={isQRViewerOpen}
+          onClose={() => setIsQRViewerOpen(false)}
+        />
       </div>
     </Layout>
   );
