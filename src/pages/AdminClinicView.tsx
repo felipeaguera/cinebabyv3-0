@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -9,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Plus, Users, Search, User, Phone, Calendar, Eye, Video, Building2 } from 'lucide-react';
+import { ArrowLeft, Plus, Users, Search, User, Phone, Calendar, Eye, Video, Building2, Trash2 } from 'lucide-react';
 import { Patient, Video as VideoType, Clinic } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import ClinicExamsTab from '@/components/ClinicExamsTab';
@@ -110,6 +109,32 @@ const AdminClinicView: React.FC = () => {
 
   const handlePatientClick = (patientId: string) => {
     navigate(`/patient/${patientId}`);
+  };
+
+  const handleDeletePatient = (patientId: string, patientName: string) => {
+    if (!confirm(`Tem certeza que deseja excluir a paciente ${patientName}? Todos os vídeos associados também serão removidos.`)) {
+      return;
+    }
+
+    // Remove patient
+    const allPatients = JSON.parse(localStorage.getItem('cinebaby_patients') || '[]');
+    const updatedPatients = allPatients.filter((p: Patient) => p.id !== patientId);
+    localStorage.setItem('cinebaby_patients', JSON.stringify(updatedPatients));
+
+    // Remove videos from this patient
+    const allVideos = JSON.parse(localStorage.getItem('cinebaby_videos') || '[]');
+    const updatedVideos = allVideos.filter((v: VideoType) => v.patientId !== patientId);
+    localStorage.setItem('cinebaby_videos', JSON.stringify(updatedVideos));
+
+    // Update local state
+    setPatients(patients.filter(p => p.id !== patientId));
+    setVideos(videos.filter(v => v.patientId !== patientId));
+
+    toast({
+      title: "Paciente excluída!",
+      description: `${patientName} e todos os vídeos associados foram removidos.`,
+      variant: "destructive"
+    });
   };
 
   const formatDate = (dateString: string) => {
@@ -268,7 +293,7 @@ const AdminClinicView: React.FC = () => {
                     </TableHeader>
                     <TableBody>
                       {filteredPatients.map((patient) => (
-                        <TableRow key={patient.id} className="cursor-pointer hover:bg-gray-50">
+                        <TableRow key={patient.id} className="hover:bg-gray-50">
                           <TableCell className="font-medium">
                             <div className="flex items-center">
                               <User className="h-4 w-4 mr-2 text-cinebaby-purple" />
@@ -294,14 +319,24 @@ const AdminClinicView: React.FC = () => {
                             </div>
                           </TableCell>
                           <TableCell className="text-right">
-                            <Button
-                              size="sm"
-                              onClick={() => handlePatientClick(patient.id)}
-                              className="bg-cinebaby-gradient hover:opacity-90"
-                            >
-                              <Eye className="h-4 w-4 mr-2" />
-                              Ver Detalhes
-                            </Button>
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                size="sm"
+                                onClick={() => handlePatientClick(patient.id)}
+                                className="bg-cinebaby-gradient hover:opacity-90"
+                              >
+                                <Eye className="h-4 w-4 mr-2" />
+                                Ver Detalhes
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleDeletePatient(patient.id, patient.name)}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
