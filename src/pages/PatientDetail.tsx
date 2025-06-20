@@ -13,6 +13,7 @@ import { Patient, Video } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { videoStorage } from '@/utils/videoStorage';
 import { isValidUUID, isLegacyId } from '@/utils/uuid';
+import { supabase } from '@/utils/supabase';
 
 const PatientDetail: React.FC = () => {
   const { patientId } = useParams<{ patientId: string }>();
@@ -34,31 +35,56 @@ const PatientDetail: React.FC = () => {
     loadVideos();
   }, [patientId]);
 
-  const loadPatientData = () => {
+  const loadPatientData = async () => {
     if (!patientId) {
       console.log('PatientDetail - No patientId provided');
       return;
     }
     
-    const patients = JSON.parse(localStorage.getItem('cinebaby_patients') || '[]');
-    console.log('PatientDetail - All patients in localStorage:', patients);
-    console.log('PatientDetail - Looking for patient with ID:', patientId);
-    
-    const foundPatient = patients.find((p: Patient) => p.id === patientId);
-    console.log('PatientDetail - Found patient:', foundPatient);
-    
-    if (foundPatient) {
-      // For admin users, allow access to any patient
-      // For clinic users, only allow access to their own patients
-      if (user?.type === 'admin' || foundPatient.clinicId === user?.clinicId) {
-        console.log('PatientDetail - User has access to patient');
-        setPatient(foundPatient);
-      } else {
-        console.log('PatientDetail - User does not have access to patient');
-        navigate('/clinic');
+    try {
+      // Buscar paciente no Supabase
+      const { data: foundPatient, error } = await supabase
+        .from('patients')
+        .select('*')
+        .eq('id', patientId)
+        .single();
+
+      if (error) {
+        console.error('PatientDetail - Error fetching patient:', error);
+        // Fallback para localStorage se Supabase falhar
+        const patients = JSON.parse(localStorage.getItem('cinebaby_patients') || '[]');
+        const localPatient = patients.find((p: Patient) => p.id === patientId);
+        
+        if (localPatient) {
+          // Converter para formato Supabase
+          const convertedPatient = {
+            ...localPatient,
+            clinic_id: localPatient.clinicId || localPatient.clinic_id,
+            created_at: localPatient.createdAt || localPatient.created_at
+          };
+          setPatient(convertedPatient);
+        } else {
+          navigate(user?.type === 'admin' ? '/admin' : '/clinic');
+        }
+        return;
       }
-    } else {
-      console.log('PatientDetail - Patient not found, redirecting');
+
+      if (foundPatient) {
+        // Para admin users, permitir acesso a qualquer paciente
+        // Para clinic users, permitir acesso apenas aos seus pacientes
+        if (user?.type === 'admin' || foundPatient.clinic_id === user?.clinicId) {
+          console.log('PatientDetail - User has access to patient');
+          setPatient(foundPatient);
+        } else {
+          console.log('PatientDetail - User does not have access to patient');
+          navigate('/clinic');
+        }
+      } else {
+        console.log('PatientDetail - Patient not found, redirecting');
+        navigate(user?.type === 'admin' ? '/admin' : '/clinic');
+      }
+    } catch (error) {
+      console.error('PatientDetail - Error loading patient:', error);
       navigate(user?.type === 'admin' ? '/admin' : '/clinic');
     }
   };
@@ -67,15 +93,38 @@ const PatientDetail: React.FC = () => {
     if (!patientId) return;
     
     try {
-      const patientVideos = await videoStorage.getVideosByPatient(patientId);
-      console.log('PatientDetail - Patient videos from IndexedDB:', patientVideos);
-      setVideos(patientVideos);
+      // Buscar vídeos no Supabase
+      const { data: supabaseVideos, error } = await supabase
+        .from('videos')
+        .select('*')
+        .eq('patient_id', patientId)
+        .order('uploaded_at', { ascending: false });
+
+      if (error) {
+        console.error('PatientDetail - Error fetching videos from Supabase:', error);
+        // Fallback para IndexedDB/localStorage
+        const patientVideos = await videoStorage.getVideosByPatient(patientId);
+        console.log('PatientDetail - Patient videos from IndexedDB:', patientVideos);
+        setVideos(patientVideos);
+        return;
+      }
+
+      console.log('PatientDetail - Patient videos from Supabase:', supabaseVideos);
+      setVideos(supabaseVideos || []);
     } catch (error) {
-      console.error('PatientDetail - Error loading videos from IndexedDB:', error);
-      // Fallback to localStorage if IndexedDB fails
-      const allVideos = JSON.parse(localStorage.getItem('cinebaby_videos') || '[]');
-      const patientVideos = allVideos.filter((v: Video) => v.patientId === patientId);
-      setVideos(patientVideos);
+      console.error('PatientDetail - Error loading videos:', error);
+      // Fallback para IndexedDB se Supabase falhar
+      try {
+        const patientVideos = await videoStorage.getVideosByPatient(patientId);
+        console.log('PatientDetail - Patient videos from IndexedDB:', patientVideos);
+        setVideos(patientVideos);
+      } catch (indexedError) {
+        console.error('PatientDetail - Error loading videos from IndexedDB:', indexedError);
+        // Fallback final para localStorage
+        const allVideos = JSON.parse(localStorage.getItem('cinebaby_videos') || '[]');
+        const patientVideos = allVideos.filter((v: Video) => v.patient_id === patientId || v.patientId === patientId);
+        setVideos(patientVideos);
+      }
     }
   };
 
@@ -186,12 +235,6 @@ const PatientDetail: React.FC = () => {
     // Atualizar o paciente com o QR Code URL
     const updatedPatient = { ...patient, qrCode: qrUrl };
     
-    const allPatients = JSON.parse(localStorage.getItem('cinebaby_patients') || '[]');
-    const updatedPatients = allPatients.map((p: Patient) => 
-      p.id === patient.id ? updatedPatient : p
-    );
-    localStorage.setItem('cinebaby_patients', JSON.stringify(updatedPatients));
-    
     setPatient(updatedPatient);
     setIsQRViewerOpen(true);
     
@@ -289,7 +332,7 @@ const PatientDetail: React.FC = () => {
 
   const getBackPath = () => {
     if (user?.type === 'admin') {
-      return patient ? `/admin/clinic/${patient.clinicId}` : '/admin';
+      return patient ? `/admin/clinic/${patient.clinic_id}` : '/admin';
     }
     return '/clinic';
   };

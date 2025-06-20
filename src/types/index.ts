@@ -13,22 +13,22 @@ export interface Clinic {
   city: string;
   email: string;
   password: string;
-  createdAt: string;
+  created_at: string;
 }
 
 export interface Patient {
   id: string;
   name: string;
   phone: string;
-  clinicId: string;
-  createdAt: string;
+  clinic_id: string;
+  created_at: string;
   qrCode?: string;
 }
 
 export interface Video {
   id: string;
-  patientId: string;
-  fileName: string;
-  fileUrl: string;
-  uploadedAt: string;
+  patient_id: string;
+  file_name: string;
+  file_url: string;
+  uploaded_at: string;
 }
