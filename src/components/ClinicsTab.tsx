@@ -1,11 +1,12 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building2, MapPin, Mail, Trash2, Users, Video, Plus } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Building2, MapPin, Mail, Calendar, Users, Trash2, Plus, Video, Eye } from 'lucide-react';
 import { Clinic, Patient, Video as VideoType } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import CreateClinicDialog from './CreateClinicDialog';
+import AdminClinicVideosDialog from './AdminClinicVideosDialog';
 
 interface ClinicsTabProps {
   clinics: Clinic[];
@@ -25,9 +26,10 @@ const ClinicsTab: React.FC<ClinicsTabProps> = ({
   setVideos 
 }) => {
   const { toast } = useToast();
+  const [selectedClinicId, setSelectedClinicId] = useState<string | null>(null);
 
   const handleDeleteClinic = (clinicId: string) => {
-    if (!confirm('Tem certeza que deseja excluir esta clínica? Todos os dados serão permanentemente perdidos.')) {
+    if (!confirm('Tem certeza que deseja excluir esta clínica? Todos os pacientes e vídeos associados também serão removidos.')) {
       return;
     }
 
@@ -36,45 +38,52 @@ const ClinicsTab: React.FC<ClinicsTabProps> = ({
     setClinics(updatedClinics);
     localStorage.setItem('cinebaby_clinics', JSON.stringify(updatedClinics));
 
-    // Remove related patients and videos
-    const clinicPatients = patients.filter((p: Patient) => p.clinicId === clinicId);
-    const patientIds = clinicPatients.map((p: Patient) => p.id);
-    
-    const filteredPatients = patients.filter((p: Patient) => p.clinicId !== clinicId);
-    const filteredVideos = videos.filter((v: VideoType) => !patientIds.includes(v.patientId));
-    
-    setPatients(filteredPatients);
-    setVideos(filteredVideos);
-    localStorage.setItem('cinebaby_patients', JSON.stringify(filteredPatients));
-    localStorage.setItem('cinebaby_videos', JSON.stringify(filteredVideos));
+    // Remove patients from this clinic
+    const updatedPatients = patients.filter(p => p.clinicId !== clinicId);
+    setPatients(updatedPatients);
+    localStorage.setItem('cinebaby_patients', JSON.stringify(updatedPatients));
+
+    // Remove videos from patients of this clinic
+    const clinicPatientIds = patients.filter(p => p.clinicId === clinicId).map(p => p.id);
+    const updatedVideos = videos.filter(v => !clinicPatientIds.includes(v.patientId));
+    setVideos(updatedVideos);
+    localStorage.setItem('cinebaby_videos', JSON.stringify(updatedVideos));
 
     toast({
       title: "Clínica excluída!",
-      description: "A clínica e todos os dados relacionados foram removidos.",
+      description: "A clínica e todos os dados associados foram removidos.",
       variant: "destructive"
     });
   };
 
   const getClinicStats = (clinicId: string) => {
-    const clinicPatients = patients.filter((p: Patient) => p.clinicId === clinicId);
-    const patientIds = clinicPatients.map((p: Patient) => p.id);
-    const clinicVideos = videos.filter((v: VideoType) => patientIds.includes(v.patientId));
+    const clinicPatients = patients.filter(p => p.clinicId === clinicId);
+    const clinicVideos = videos.filter(v => 
+      clinicPatients.some(p => p.id === v.patientId)
+    );
     
     return {
-      patientsCount: clinicPatients.length,
-      videosCount: clinicVideos.length
+      patientCount: clinicPatients.length,
+      videoCount: clinicVideos.length
     };
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h3 className="text-xl font-semibold text-gray-900">Gerenciar Clínicas</h3>
-          <p className="text-gray-600">Cadastre e gerencie as clínicas da plataforma</p>
+          <h3 className="text-xl font-semibold text-gray-900">Clínicas Cadastradas</h3>
+          <p className="text-gray-600">Gerencie as clínicas da plataforma</p>
         </div>
         
-        <CreateClinicDialog clinics={clinics} setClinics={setClinics} />
+        <CreateClinicDialog 
+          clinics={clinics}
+          setClinics={setClinics}
+        />
       </div>
 
       {clinics.length === 0 ? (
@@ -82,57 +91,112 @@ const ClinicsTab: React.FC<ClinicsTabProps> = ({
           <CardContent>
             <Building2 className="h-12 w-12 mx-auto text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhuma clínica cadastrada</h3>
-            <p className="text-gray-600 mb-4">Comece cadastrando a primeira clínica da plataforma</p>
-            <CreateClinicDialog clinics={clinics} setClinics={setClinics} />
+            <p className="text-gray-600">Comece adicionando a primeira clínica</p>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {clinics.map((clinic) => {
-            const stats = getClinicStats(clinic.id);
-            return (
-              <Card key={clinic.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Building2 className="h-5 w-5 text-cinebaby-purple" />
-                      <CardTitle className="text-lg">{clinic.name}</CardTitle>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteClinic(clinic.id)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center text-sm text-gray-600">
-                    <MapPin className="h-4 w-4 mr-2" />
-                    {clinic.address}, {clinic.city}
-                  </div>
-                  <div className="flex items-center text-sm text-gray-600">
-                    <Mail className="h-4 w-4 mr-2" />
-                    {clinic.email}
-                  </div>
-                  
-                  <div className="flex justify-between pt-3 border-t border-gray-100">
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Users className="h-4 w-4 mr-1" />
-                      {stats.patientsCount} pacientes
-                    </div>
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Video className="h-4 w-4 mr-1" />
-                      {stats.videosCount} vídeos
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Building2 className="h-5 w-5 mr-2 text-cinebaby-purple" />
+              Lista de Clínicas ({clinics.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Clínica</TableHead>
+                  <TableHead>Localização</TableHead>
+                  <TableHead>Contato</TableHead>
+                  <TableHead>Estatísticas</TableHead>
+                  <TableHead>Cadastro</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {clinics.map((clinic) => {
+                  const stats = getClinicStats(clinic.id);
+                  return (
+                    <TableRow key={clinic.id}>
+                      <TableCell>
+                        <div className="flex items-center">
+                          <Building2 className="h-4 w-4 mr-2 text-cinebaby-purple" />
+                          <div>
+                            <p className="font-medium">{clinic.name}</p>
+                            <p className="text-sm text-gray-500">{clinic.address}</p>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center">
+                          <MapPin className="h-4 w-4 mr-2 text-gray-400" />
+                          {clinic.city}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center">
+                          <Mail className="h-4 w-4 mr-2 text-gray-400" />
+                          {clinic.email}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <div className="flex items-center text-sm">
+                            <Users className="h-3 w-3 mr-1 text-cinebaby-turquoise" />
+                            {stats.patientCount} pacientes
+                          </div>
+                          <div className="flex items-center text-sm">
+                            <Video className="h-3 w-3 mr-1 text-cinebaby-purple" />
+                            {stats.videoCount} vídeos
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center text-sm text-gray-600">
+                          <Calendar className="h-4 w-4 mr-2" />
+                          {formatDate(clinic.createdAt)}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSelectedClinicId(clinic.id)}
+                            className="text-cinebaby-purple hover:bg-cinebaby-purple hover:text-white"
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            Ver Vídeos
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteClinic(clinic.id)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      {selectedClinicId && (
+        <AdminClinicVideosDialog
+          clinicId={selectedClinicId}
+          clinics={clinics}
+          patients={patients}
+          videos={videos}
+          setVideos={setVideos}
+          onClose={() => setSelectedClinicId(null)}
+        />
       )}
     </div>
   );
