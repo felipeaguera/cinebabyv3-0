@@ -99,7 +99,7 @@ const CreateClinicDialog: React.FC<CreateClinicDialogProps> = ({ clinics, setCli
               id="email"
               type="email"
               value={formData.email}
-              onChange={(e) => set FormData({ ...formData, email: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               required
             />
           </div>
