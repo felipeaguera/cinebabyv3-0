@@ -163,6 +163,15 @@ const ClinicsTab: React.FC<ClinicsTabProps> = ({
                           <Button
                             variant="outline"
                             size="sm"
+                            onClick={() => window.location.href = `/admin/clinic/${clinic.id}`}
+                            className="text-cinebaby-turquoise hover:bg-cinebaby-turquoise hover:text-white"
+                          >
+                            <Building2 className="h-4 w-4 mr-1" />
+                            Acessar
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => setSelectedClinicId(clinic.id)}
                             className="text-cinebaby-purple hover:bg-cinebaby-purple hover:text-white"
                           >

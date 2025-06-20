@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import AdminDashboard from "./pages/AdminDashboard";
 import ClinicDashboard from "./pages/ClinicDashboard";
 import PatientDetail from "./pages/PatientDetail";
+import AdminClinicView from "./pages/AdminClinicView";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,14 @@ const App = () => (
               element={
                 <ProtectedRoute allowedTypes={['admin']}>
                   <AdminDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/clinic/:clinicId" 
+              element={
+                <ProtectedRoute allowedTypes={['admin']}>
+                  <AdminClinicView />
                 </ProtectedRoute>
               } 
             />
