@@ -7,8 +7,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Users, Search, User, Phone, Calendar, QrCode } from 'lucide-react';
-import { Patient } from '@/types';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Plus, Users, Search, User, Phone, Calendar, Eye, Video } from 'lucide-react';
+import { Patient, Video as VideoType } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 
@@ -86,6 +87,11 @@ const ClinicDashboard: React.FC = () => {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR');
+  };
+
+  const getPatientVideoCount = (patientId: string) => {
+    const videos = JSON.parse(localStorage.getItem('cinebaby_videos') || '[]');
+    return videos.filter((v: VideoType) => v.patientId === patientId).length;
   };
 
   return (
@@ -179,47 +185,67 @@ const ClinicDashboard: React.FC = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filteredPatients.map((patient) => (
-              <Card 
-                key={patient.id} 
-                className="hover:shadow-lg transition-all cursor-pointer hover:scale-105"
-                onClick={() => handlePatientClick(patient.id)}
-              >
-                <CardHeader className="pb-3">
-                  <div className="flex items-center space-x-2">
-                    <User className="h-5 w-5 text-cinebaby-purple" />
-                    <CardTitle className="text-lg">{patient.name}</CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center text-sm text-gray-600">
-                    <Phone className="h-4 w-4 mr-2" />
-                    {patient.phone}
-                  </div>
-                  <div className="flex items-center text-sm text-gray-600">
-                    <Calendar className="h-4 w-4 mr-2" />
-                    Cadastrada em {formatDate(patient.createdAt)}
-                  </div>
-                  
-                  <div className="pt-3 border-t border-gray-100">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="w-full"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handlePatientClick(patient.id);
-                      }}
-                    >
-                      <QrCode className="h-4 w-4 mr-2" />
-                      Ver Detalhes
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Users className="h-5 w-5 mr-2 text-cinebaby-purple" />
+                Lista de Pacientes ({filteredPatients.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Telefone</TableHead>
+                    <TableHead>Vídeos</TableHead>
+                    <TableHead>Cadastro</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredPatients.map((patient) => (
+                    <TableRow key={patient.id} className="cursor-pointer hover:bg-gray-50">
+                      <TableCell className="font-medium">
+                        <div className="flex items-center">
+                          <User className="h-4 w-4 mr-2 text-cinebaby-purple" />
+                          {patient.name}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center">
+                          <Phone className="h-4 w-4 mr-2 text-gray-400" />
+                          {patient.phone}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center">
+                          <Video className="h-4 w-4 mr-2 text-cinebaby-turquoise" />
+                          {getPatientVideoCount(patient.id)} vídeo(s)
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center text-sm text-gray-600">
+                          <Calendar className="h-4 w-4 mr-2" />
+                          {formatDate(patient.createdAt)}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          size="sm"
+                          onClick={() => handlePatientClick(patient.id)}
+                          className="bg-cinebaby-gradient hover:opacity-90"
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          Ver Detalhes
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         )}
       </div>
     </Layout>
