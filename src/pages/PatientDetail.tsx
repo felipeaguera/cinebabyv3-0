@@ -159,11 +159,11 @@ const PatientDetail: React.FC = () => {
   const generateQRCode = () => {
     if (!patient) return;
     
-    // Garantir que o QR Code aponte para a URL correta com o ID da paciente
+    // Garantir que o QR Code aponte para a URL correta com o ID UUID da paciente
     const baseUrl = window.location.origin;
-    const qrUrl = `${baseUrl}/patient/${patient.id}/videos`;
+    const qrUrl = `${baseUrl}/paciente/${patient.id}`;
     
-    console.log('PatientDetail - Patient ID:', patient.id);
+    console.log('PatientDetail - Patient UUID:', patient.id);
     console.log('PatientDetail - Generating QR Code for URL:', qrUrl);
     
     // Atualizar o paciente com o QR Code URL
@@ -180,18 +180,18 @@ const PatientDetail: React.FC = () => {
     
     toast({
       title: "QR Code gerado!",
-      description: `Link criado: /patient/${patient.id}/videos`,
+      description: `Link criado: /paciente/${patient.id}`,
     });
   };
 
   const printQRCard = () => {
     if (!patient) return;
     
-    // Generate QR code URL usando o ID correto da paciente
-    const patientVideoUrl = `${window.location.origin}/patient/${patient.id}/videos`;
+    // Generate QR code URL usando o ID UUID da paciente
+    const patientVideoUrl = `${window.location.origin}/paciente/${patient.id}`;
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(patientVideoUrl)}`;
     
-    console.log('PatientDetail - Printing QR Card for patient ID:', patient.id);
+    console.log('PatientDetail - Printing QR Card for patient UUID:', patient.id);
     console.log('PatientDetail - QR Card URL:', patientVideoUrl);
     
     const printWindow = window.open('', '_blank');

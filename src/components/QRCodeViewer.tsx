@@ -17,12 +17,12 @@ const QRCodeViewer: React.FC<QRCodeViewerProps> = ({ patient, isOpen, onClose })
 
   if (!patient) return null;
 
-  // Garantir que o link seja sempre correto e use o ID da paciente
+  // Usar o ID UUID real do paciente para gerar o link
   const baseUrl = window.location.origin;
-  const patientVideoUrl = `${baseUrl}/patient/${patient.id}/videos`;
+  const patientVideoUrl = `${baseUrl}/paciente/${patient.id}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(patientVideoUrl)}`;
 
-  console.log('QRCodeViewer - Patient ID:', patient.id);
+  console.log('QRCodeViewer - Patient UUID:', patient.id);
   console.log('QRCodeViewer - Generated URL for patient videos:', patientVideoUrl);
   console.log('QRCodeViewer - QR Code URL:', qrCodeUrl);
 

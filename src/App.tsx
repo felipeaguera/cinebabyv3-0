@@ -12,6 +12,7 @@ import ClinicDashboard from "./pages/ClinicDashboard";
 import PatientDetail from "./pages/PatientDetail";
 import AdminClinicView from "./pages/AdminClinicView";
 import PublicPatientVideos from "./pages/PublicPatientVideos";
+import PacientePublico from "./pages/PacientePublico";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -60,6 +61,11 @@ const App = () => (
             <Route 
               path="/patient/:patientId/videos" 
               element={<PublicPatientVideos />} 
+            />
+            {/* Nova rota pública para o QR Code com UUID */}
+            <Route 
+              path="/paciente/:id" 
+              element={<PacientePublico />} 
             />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
