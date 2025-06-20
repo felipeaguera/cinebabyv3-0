@@ -11,6 +11,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import ClinicDashboard from "./pages/ClinicDashboard";
 import PatientDetail from "./pages/PatientDetail";
 import AdminClinicView from "./pages/AdminClinicView";
+import PublicPatientVideos from "./pages/PublicPatientVideos";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -55,6 +56,10 @@ const App = () => (
                   <PatientDetail />
                 </ProtectedRoute>
               } 
+            />
+            <Route 
+              path="/patient/:patientId/videos" 
+              element={<PublicPatientVideos />} 
             />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
