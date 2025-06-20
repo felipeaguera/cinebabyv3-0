@@ -124,6 +124,11 @@ const PatientDetail: React.FC = () => {
   const printQRCard = () => {
     if (!patient) return;
     
+    // Generate QR code URL if not already present
+    const qrCodeUrl = patient.qrCode 
+      ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(patient.qrCode)}`
+      : `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`${window.location.origin}/patient/${patient.id}/videos`)}`;
+    
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
@@ -133,21 +138,30 @@ const PatientDetail: React.FC = () => {
           <title>Cartão QR Code - ${patient.name}</title>
           <style>
             @page { size: A4; margin: 20mm; }
-            body { font-family: Arial, sans-serif; text-align: center; padding: 40px; }
+            body { font-family: Arial, sans-serif; text-align: center; padding: 40px; margin: 0; }
             .card { max-width: 400px; margin: 0 auto; padding: 40px; border: 2px solid #7B529F; border-radius: 20px; }
             .logo { width: 120px; margin-bottom: 30px; }
-            .qr-code { width: 200px; height: 200px; margin: 30px auto; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; }
+            .qr-code { 
+              width: 200px; 
+              height: 200px; 
+              margin: 30px auto; 
+              border: 1px solid #ddd; 
+              display: block;
+              border-radius: 8px;
+            }
             .patient-name { font-size: 24px; font-weight: bold; color: #7B529F; margin: 20px 0; }
             .clinic-name { font-size: 18px; color: #5FC6C8; margin: 10px 0; }
-            .message { font-size: 16px; color: #666; margin: 30px 0; font-style: italic; }
+            .message { font-size: 16px; color: #666; margin: 30px 0; font-style: italic; line-height: 1.4; }
+            .patient-info { font-size: 14px; color: #888; margin: 15px 0; }
           </style>
         </head>
         <body>
           <div class="card">
             <img src="/lovable-uploads/6bd58522-32f8-48b7-bbe7-999d3463508c.png" alt="CineBaby" class="logo">
             <div class="patient-name">${patient.name}</div>
-            <div class="clinic-name">Clínica cadastrada no CineBaby</div>
-            <div class="qr-code">QR Code<br>${patient.qrCode || 'Gerar QR Code'}</div>
+            <div class="clinic-name">Clínica CineBaby</div>
+            <div class="patient-info">Telefone: ${patient.phone}</div>
+            <img src="${qrCodeUrl}" alt="QR Code para ${patient.name}" class="qr-code" />
             <div class="message">
               "Reviva esse momento mágico sempre que quiser. Ver seu bebê antes do nascimento é um carinho que emociona para sempre."
             </div>
@@ -158,7 +172,11 @@ const PatientDetail: React.FC = () => {
 
     printWindow.document.write(printContent);
     printWindow.document.close();
-    printWindow.print();
+    
+    // Wait for the image to load before printing
+    setTimeout(() => {
+      printWindow.print();
+    }, 1000);
   };
 
   const formatDate = (dateString: string) => {
