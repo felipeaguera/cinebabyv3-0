@@ -17,11 +17,12 @@ const QRCodeViewer: React.FC<QRCodeViewerProps> = ({ patient, isOpen, onClose })
 
   if (!patient) return null;
 
-  // Garantir que o link seja sempre correto
+  // Garantir que o link seja sempre correto e use o ID da paciente
   const baseUrl = window.location.origin;
   const patientVideoUrl = `${baseUrl}/patient/${patient.id}/videos`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(patientVideoUrl)}`;
 
+  console.log('QRCodeViewer - Patient ID:', patient.id);
   console.log('QRCodeViewer - Generated URL for patient videos:', patientVideoUrl);
   console.log('QRCodeViewer - QR Code URL:', qrCodeUrl);
 
@@ -36,7 +37,7 @@ const QRCodeViewer: React.FC<QRCodeViewerProps> = ({ patient, isOpen, onClose })
   const handleDownloadQR = () => {
     const link = document.createElement('a');
     link.href = qrCodeUrl;
-    link.download = `qrcode-${patient.name.replace(/\s+/g, '-').toLowerCase()}.png`;
+    link.download = `qrcode-${patient.name.replace(/\s+/g, '-').toLowerCase()}-${patient.id}.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -48,6 +49,7 @@ const QRCodeViewer: React.FC<QRCodeViewerProps> = ({ patient, isOpen, onClose })
   };
 
   const handleTestLink = () => {
+    console.log('QRCodeViewer - Testing link:', patientVideoUrl);
     window.open(patientVideoUrl, '_blank');
   };
 
@@ -84,6 +86,7 @@ const QRCodeViewer: React.FC<QRCodeViewerProps> = ({ patient, isOpen, onClose })
           <div className="text-center space-y-2">
             <h3 className="font-medium text-gray-900">{patient.name}</h3>
             <p className="text-sm text-gray-600">{patient.phone}</p>
+            <p className="text-xs text-gray-500 font-mono">ID: {patient.id}</p>
           </div>
 
           {/* Actions */}

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,10 +36,14 @@ const PublicPatientVideos: React.FC = () => {
       console.log('PublicPatientVideos - All patients in localStorage:', patients);
       console.log('PublicPatientVideos - Looking for patient with ID:', patientId);
       
-      // Buscar paciente tanto por string quanto por number
-      const foundPatient = patients.find((p: Patient) => 
-        p.id === patientId || p.id === String(patientId) || String(p.id) === patientId
-      );
+      // Buscar paciente por ID exato (string e number)
+      const foundPatient = patients.find((p: Patient) => {
+        const matches = p.id === patientId || String(p.id) === String(patientId);
+        if (matches) {
+          console.log('PublicPatientVideos - Found matching patient:', p);
+        }
+        return matches;
+      });
       
       console.log('PublicPatientVideos - Found patient:', foundPatient);
       
@@ -46,6 +51,7 @@ const PublicPatientVideos: React.FC = () => {
         setPatient(foundPatient);
       } else {
         console.log('PublicPatientVideos - Patient not found in localStorage');
+        console.log('PublicPatientVideos - Available patient IDs:', patients.map((p: Patient) => p.id));
       }
     } catch (error) {
       console.error('PublicPatientVideos - Error loading patient data:', error);
@@ -56,6 +62,8 @@ const PublicPatientVideos: React.FC = () => {
     if (!patientId) return;
     
     try {
+      console.log('PublicPatientVideos - Loading videos for patient ID:', patientId);
+      
       // Try IndexedDB first
       const patientVideos = await videoStorage.getVideosByPatient(patientId);
       console.log('PublicPatientVideos - Patient videos from IndexedDB:', patientVideos);
@@ -69,6 +77,7 @@ const PublicPatientVideos: React.FC = () => {
         return isValid;
       });
       
+      console.log('PublicPatientVideos - Valid videos found:', validVideos.length);
       setVideos(validVideos);
     } catch (error) {
       console.error('PublicPatientVideos - Error loading videos from IndexedDB:', error);
@@ -78,12 +87,16 @@ const PublicPatientVideos: React.FC = () => {
         const allVideos = JSON.parse(localStorage.getItem('cinebaby_videos') || '[]');
         console.log('PublicPatientVideos - All videos in localStorage:', allVideos);
         
-        // Buscar vídeos tanto por string quanto por number
-        const patientVideos = allVideos.filter((v: Video) => 
-          v.patientId === patientId || v.patientId === String(patientId) || String(v.patientId) === patientId
-        );
+        // Buscar vídeos por ID da paciente (string e number)
+        const patientVideos = allVideos.filter((v: Video) => {
+          const matches = v.patientId === patientId || String(v.patientId) === String(patientId);
+          if (matches) {
+            console.log('PublicPatientVideos - Found matching video for patient:', v);
+          }
+          return matches;
+        });
         
-        console.log('PublicPatientVideos - Patient videos:', patientVideos);
+        console.log('PublicPatientVideos - Patient videos from localStorage:', patientVideos);
         
         // Filtrar apenas vídeos com URLs válidas
         const validVideos = patientVideos.filter((video: Video) => {
@@ -94,6 +107,7 @@ const PublicPatientVideos: React.FC = () => {
           return isValid;
         });
         
+        console.log('PublicPatientVideos - Valid videos from localStorage:', validVideos.length);
         setVideos(validVideos);
       } catch (localStorageError) {
         console.error('PublicPatientVideos - Error loading videos from localStorage:', localStorageError);
@@ -153,9 +167,10 @@ const PublicPatientVideos: React.FC = () => {
             <p className="text-sm text-gray-600 mb-3">
               Não foi possível encontrar os dados desta paciente.
             </p>
-            <p className="text-xs text-gray-500 font-mono break-all bg-gray-50 p-2 rounded">
-              ID: {patientId}
-            </p>
+            <div className="text-xs text-gray-500 font-mono break-all bg-gray-50 p-2 rounded mb-3">
+              <p>ID procurado: {patientId}</p>
+              <p>Tipo: {typeof patientId}</p>
+            </div>
             <Button 
               className="mt-4 bg-cinebaby-gradient hover:opacity-90"
               onClick={() => window.location.reload()}
@@ -187,7 +202,7 @@ const PublicPatientVideos: React.FC = () => {
             </p>
             <div className="flex items-center justify-center mt-2 text-xs text-gray-500">
               <Smartphone className="h-3 w-3 mr-1" />
-              Otimizado para celular
+              Paciente ID: {patient.id}
             </div>
           </div>
         </div>
@@ -210,8 +225,11 @@ const PublicPatientVideos: React.FC = () => {
                 <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">
                   Ainda não há vídeos disponíveis
                 </h3>
-                <p className="text-sm sm:text-base text-gray-600 px-4">
+                <p className="text-sm sm:text-base text-gray-600 px-4 mb-2">
                   Os vídeos do seu ultrassom aparecerão aqui em breve.
+                </p>
+                <p className="text-xs text-gray-500">
+                  Verificando para paciente ID: {patientId}
                 </p>
               </div>
             ) : (

@@ -159,10 +159,11 @@ const PatientDetail: React.FC = () => {
   const generateQRCode = () => {
     if (!patient) return;
     
-    // Garantir que o QR Code aponte para a URL correta
+    // Garantir que o QR Code aponte para a URL correta com o ID da paciente
     const baseUrl = window.location.origin;
     const qrUrl = `${baseUrl}/patient/${patient.id}/videos`;
     
+    console.log('PatientDetail - Patient ID:', patient.id);
     console.log('PatientDetail - Generating QR Code for URL:', qrUrl);
     
     // Atualizar o paciente com o QR Code URL
@@ -179,17 +180,19 @@ const PatientDetail: React.FC = () => {
     
     toast({
       title: "QR Code gerado!",
-      description: "O QR Code foi criado com sucesso e pode ser escaneado no celular.",
+      description: `Link criado: /patient/${patient.id}/videos`,
     });
   };
 
   const printQRCard = () => {
     if (!patient) return;
     
-    // Generate QR code URL if not already present
-    const qrCodeUrl = patient.qrCode 
-      ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(patient.qrCode)}`
-      : `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`${window.location.origin}/patient/${patient.id}/videos`)}`;
+    // Generate QR code URL usando o ID correto da paciente
+    const patientVideoUrl = `${window.location.origin}/patient/${patient.id}/videos`;
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(patientVideoUrl)}`;
+    
+    console.log('PatientDetail - Printing QR Card for patient ID:', patient.id);
+    console.log('PatientDetail - QR Card URL:', patientVideoUrl);
     
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
@@ -215,6 +218,7 @@ const PatientDetail: React.FC = () => {
             .clinic-name { font-size: 18px; color: #5FC6C8; margin: 10px 0; }
             .message { font-size: 16px; color: #666; margin: 30px 0; font-style: italic; line-height: 1.4; }
             .patient-info { font-size: 14px; color: #888; margin: 15px 0; }
+            .patient-id { font-size: 12px; color: #999; font-family: monospace; }
           </style>
         </head>
         <body>
@@ -223,6 +227,7 @@ const PatientDetail: React.FC = () => {
             <div class="patient-name">${patient.name}</div>
             <div class="clinic-name">Clínica CineBaby</div>
             <div class="patient-info">Telefone: ${patient.phone}</div>
+            <div class="patient-id">ID: ${patient.id}</div>
             <img src="${qrCodeUrl}" alt="QR Code para ${patient.name}" class="qr-code" />
             <div class="message">
               "Reviva esse momento mágico sempre que quiser. Ver seu bebê antes do nascimento é um carinho que emociona para sempre."
