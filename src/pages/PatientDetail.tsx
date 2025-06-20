@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -33,10 +32,16 @@ const PatientDetail: React.FC = () => {
     const patients = JSON.parse(localStorage.getItem('cinebaby_patients') || '[]');
     const foundPatient = patients.find((p: Patient) => p.id === patientId);
     
-    if (foundPatient && foundPatient.clinicId === user?.clinicId) {
-      setPatient(foundPatient);
+    if (foundPatient) {
+      // For admin users, allow access to any patient
+      // For clinic users, only allow access to their own patients
+      if (user?.type === 'admin' || foundPatient.clinicId === user?.clinicId) {
+        setPatient(foundPatient);
+      } else {
+        navigate('/clinic');
+      }
     } else {
-      navigate('/clinic');
+      navigate(user?.type === 'admin' ? '/admin' : '/clinic');
     }
   };
 
@@ -163,14 +168,21 @@ const PatientDetail: React.FC = () => {
     });
   };
 
+  const getBackPath = () => {
+    if (user?.type === 'admin') {
+      return patient ? `/admin/clinic/${patient.clinicId}` : '/admin';
+    }
+    return '/clinic';
+  };
+
   if (!patient) {
     return (
       <Layout title="Paciente não encontrado">
         <div className="text-center">
           <p className="text-gray-600 mb-4">Paciente não encontrado ou você não tem permissão para visualizá-lo.</p>
-          <Button onClick={() => navigate('/clinic')}>
+          <Button onClick={() => navigate(getBackPath())}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar para Lista
+            Voltar
           </Button>
         </div>
       </Layout>
@@ -183,10 +195,10 @@ const PatientDetail: React.FC = () => {
         <div className="flex items-center justify-between">
           <Button
             variant="outline"
-            onClick={() => navigate('/clinic')}
+            onClick={() => navigate(getBackPath())}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar para Lista
+            {user?.type === 'admin' ? 'Voltar para Clínica' : 'Voltar para Lista'}
           </Button>
           
           <div className="flex gap-2">

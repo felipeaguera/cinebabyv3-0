@@ -51,7 +51,7 @@ const App = () => (
             <Route 
               path="/patient/:patientId" 
               element={
-                <ProtectedRoute allowedTypes={['clinic']}>
+                <ProtectedRoute allowedTypes={['clinic', 'admin']}>
                   <PatientDetail />
                 </ProtectedRoute>
               } 
