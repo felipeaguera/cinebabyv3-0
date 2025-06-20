@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Play, Heart, X, Smartphone } from 'lucide-react';
 import { Patient, Video } from '@/types';
+import { videoStorage } from '@/utils/videoStorage';
 
 const PublicPatientVideos: React.FC = () => {
   const { patientId } = useParams<{ patientId: string }>();
@@ -52,19 +52,13 @@ const PublicPatientVideos: React.FC = () => {
     }
   };
 
-  const loadVideos = () => {
+  const loadVideos = async () => {
     if (!patientId) return;
     
     try {
-      const allVideos = JSON.parse(localStorage.getItem('cinebaby_videos') || '[]');
-      console.log('PublicPatientVideos - All videos in localStorage:', allVideos);
-      
-      // Buscar vídeos tanto por string quanto por number
-      const patientVideos = allVideos.filter((v: Video) => 
-        v.patientId === patientId || v.patientId === String(patientId) || String(v.patientId) === patientId
-      );
-      
-      console.log('PublicPatientVideos - Patient videos:', patientVideos);
+      // Try IndexedDB first
+      const patientVideos = await videoStorage.getVideosByPatient(patientId);
+      console.log('PublicPatientVideos - Patient videos from IndexedDB:', patientVideos);
       
       // Filtrar apenas vídeos com URLs válidas
       const validVideos = patientVideos.filter((video: Video) => {
@@ -77,7 +71,33 @@ const PublicPatientVideos: React.FC = () => {
       
       setVideos(validVideos);
     } catch (error) {
-      console.error('PublicPatientVideos - Error loading videos:', error);
+      console.error('PublicPatientVideos - Error loading videos from IndexedDB:', error);
+      
+      // Fallback to localStorage
+      try {
+        const allVideos = JSON.parse(localStorage.getItem('cinebaby_videos') || '[]');
+        console.log('PublicPatientVideos - All videos in localStorage:', allVideos);
+        
+        // Buscar vídeos tanto por string quanto por number
+        const patientVideos = allVideos.filter((v: Video) => 
+          v.patientId === patientId || v.patientId === String(patientId) || String(v.patientId) === patientId
+        );
+        
+        console.log('PublicPatientVideos - Patient videos:', patientVideos);
+        
+        // Filtrar apenas vídeos com URLs válidas
+        const validVideos = patientVideos.filter((video: Video) => {
+          const isValid = video.fileUrl && video.fileUrl.trim() !== '';
+          if (!isValid) {
+            console.log('PublicPatientVideos - Invalid video URL for video:', video.fileName);
+          }
+          return isValid;
+        });
+        
+        setVideos(validVideos);
+      } catch (localStorageError) {
+        console.error('PublicPatientVideos - Error loading videos from localStorage:', localStorageError);
+      }
     }
   };
 

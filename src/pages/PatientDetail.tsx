@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { ArrowLeft, Upload, Play, Trash2, QrCode, Printer, User, Phone, Calendar, X } from 'lucide-react';
 import { Patient, Video } from '@/types';
 import { useToast } from '@/hooks/use-toast';
+import { videoStorage } from '@/utils/videoStorage';
 
 const PatientDetail: React.FC = () => {
   const { patientId } = useParams<{ patientId: string }>();
@@ -23,6 +24,7 @@ const PatientDetail: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [isVideoPlayerOpen, setIsVideoPlayerOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -60,65 +62,82 @@ const PatientDetail: React.FC = () => {
     }
   };
 
-  const loadVideos = () => {
+  const loadVideos = async () => {
     if (!patientId) return;
     
-    const allVideos = JSON.parse(localStorage.getItem('cinebaby_videos') || '[]');
-    console.log('PatientDetail - All videos in localStorage:', allVideos);
-    const patientVideos = allVideos.filter((v: Video) => v.patientId === patientId);
-    console.log('PatientDetail - Patient videos:', patientVideos);
-    setVideos(patientVideos);
+    try {
+      const patientVideos = await videoStorage.getVideosByPatient(patientId);
+      console.log('PatientDetail - Patient videos from IndexedDB:', patientVideos);
+      setVideos(patientVideos);
+    } catch (error) {
+      console.error('PatientDetail - Error loading videos from IndexedDB:', error);
+      // Fallback to localStorage if IndexedDB fails
+      const allVideos = JSON.parse(localStorage.getItem('cinebaby_videos') || '[]');
+      const patientVideos = allVideos.filter((v: Video) => v.patientId === patientId);
+      setVideos(patientVideos);
+    }
   };
 
-  const handleVideoUpload = (e: React.FormEvent) => {
+  const handleVideoUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!selectedFile || !patientId) return;
 
-    // Criar um FileReader para converter o arquivo em base64
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64Data = event.target?.result as string;
-      
-      const newVideo: Video = {
+    setUploading(true);
+
+    try {
+      const newVideo = {
         id: Date.now().toString(),
         patientId,
         fileName: selectedFile.name,
-        fileUrl: base64Data, // Usar base64 em vez de blob URL
+        file: selectedFile,
         uploadedAt: new Date().toISOString()
       };
 
-      const allVideos = JSON.parse(localStorage.getItem('cinebaby_videos') || '[]');
-      const updatedVideos = [...allVideos, newVideo];
-      localStorage.setItem('cinebaby_videos', JSON.stringify(updatedVideos));
-
-      setVideos([...videos, newVideo]);
+      await videoStorage.saveVideo(newVideo);
+      
+      // Reload videos
+      await loadVideos();
+      
       setSelectedFile(null);
       setIsUploadDialogOpen(false);
       
       toast({
         title: "Vídeo enviado!",
-        description: "O vídeo foi adicionado com sucesso.",
+        description: "O vídeo foi adicionado com sucesso usando armazenamento otimizado.",
       });
-    };
-    
-    reader.readAsDataURL(selectedFile);
+    } catch (error) {
+      console.error('Error uploading video:', error);
+      toast({
+        title: "Erro no upload",
+        description: "Não foi possível fazer upload do vídeo. Tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setUploading(false);
+    }
   };
 
-  const handleDeleteVideo = (videoId: string) => {
+  const handleDeleteVideo = async (videoId: string) => {
     if (!confirm('Tem certeza que deseja excluir este vídeo?')) return;
 
-    const allVideos = JSON.parse(localStorage.getItem('cinebaby_videos') || '[]');
-    const updatedVideos = allVideos.filter((v: Video) => v.id !== videoId);
-    localStorage.setItem('cinebaby_videos', JSON.stringify(updatedVideos));
-
-    setVideos(videos.filter(v => v.id !== videoId));
-    
-    toast({
-      title: "Vídeo excluído!",
-      description: "O vídeo foi removido com sucesso.",
-      variant: "destructive"
-    });
+    try {
+      await videoStorage.deleteVideo(videoId);
+      await loadVideos();
+      
+      toast({
+        title: "Vídeo excluído!",
+        description: "O vídeo foi removido com sucesso.",
+        variant: "destructive"
+      });
+    } catch (error) {
+      console.error('Error deleting video:', error);
+      toast({
+        title: "Erro ao excluir",
+        description: "Não foi possível excluir o vídeo. Tente novamente.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handlePlayVideo = (video: Video) => {
@@ -318,7 +337,7 @@ const PatientDetail: React.FC = () => {
                   <DialogHeader>
                     <DialogTitle>Upload de Vídeo</DialogTitle>
                     <DialogDescription>
-                      Selecione o vídeo do ultrassom para fazer o upload
+                      Selecione o vídeo do ultrassom para fazer o upload. Agora suporta arquivos maiores!
                     </DialogDescription>
                   </DialogHeader>
                   
@@ -331,11 +350,16 @@ const PatientDetail: React.FC = () => {
                         accept="video/*"
                         onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
                         required
+                        disabled={uploading}
                       />
                     </div>
                     
-                    <Button type="submit" className="w-full bg-cinebaby-gradient hover:opacity-90">
-                      Fazer Upload
+                    <Button 
+                      type="submit" 
+                      className="w-full bg-cinebaby-gradient hover:opacity-90"
+                      disabled={uploading}
+                    >
+                      {uploading ? 'Enviando...' : 'Fazer Upload'}
                     </Button>
                   </form>
                 </DialogContent>
