@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -27,25 +26,36 @@ const PatientDetail: React.FC = () => {
   const { toast } = useToast();
 
   useEffect(() => {
+    console.log('PatientDetail - Loading patient with ID:', patientId);
     loadPatientData();
     loadVideos();
   }, [patientId]);
 
   const loadPatientData = () => {
-    if (!patientId) return;
+    if (!patientId) {
+      console.log('PatientDetail - No patientId provided');
+      return;
+    }
     
     const patients = JSON.parse(localStorage.getItem('cinebaby_patients') || '[]');
+    console.log('PatientDetail - All patients in localStorage:', patients);
+    console.log('PatientDetail - Looking for patient with ID:', patientId);
+    
     const foundPatient = patients.find((p: Patient) => p.id === patientId);
+    console.log('PatientDetail - Found patient:', foundPatient);
     
     if (foundPatient) {
       // For admin users, allow access to any patient
       // For clinic users, only allow access to their own patients
       if (user?.type === 'admin' || foundPatient.clinicId === user?.clinicId) {
+        console.log('PatientDetail - User has access to patient');
         setPatient(foundPatient);
       } else {
+        console.log('PatientDetail - User does not have access to patient');
         navigate('/clinic');
       }
     } else {
+      console.log('PatientDetail - Patient not found, redirecting');
       navigate(user?.type === 'admin' ? '/admin' : '/clinic');
     }
   };
@@ -54,7 +64,9 @@ const PatientDetail: React.FC = () => {
     if (!patientId) return;
     
     const allVideos = JSON.parse(localStorage.getItem('cinebaby_videos') || '[]');
+    console.log('PatientDetail - All videos in localStorage:', allVideos);
     const patientVideos = allVideos.filter((v: Video) => v.patientId === patientId);
+    console.log('PatientDetail - Patient videos:', patientVideos);
     setVideos(patientVideos);
   };
 
@@ -213,6 +225,7 @@ const PatientDetail: React.FC = () => {
       <Layout title="Paciente não encontrado">
         <div className="text-center">
           <p className="text-gray-600 mb-4">Paciente não encontrado ou você não tem permissão para visualizá-lo.</p>
+          <p className="text-sm text-gray-500 mb-4">ID procurado: {patientId}</p>
           <Button onClick={() => navigate(getBackPath())}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Voltar
@@ -405,6 +418,7 @@ const PatientDetail: React.FC = () => {
                   key={selectedVideo.id}
                   src={selectedVideo.fileUrl} 
                   controls 
+                  autoPlay
                   className="w-full h-full"
                   preload="metadata"
                   onLoadStart={() => console.log('Video loading started')}

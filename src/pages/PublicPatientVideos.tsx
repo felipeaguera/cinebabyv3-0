@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,15 +14,23 @@ const PublicPatientVideos: React.FC = () => {
   const [isVideoPlayerOpen, setIsVideoPlayerOpen] = useState(false);
 
   useEffect(() => {
+    console.log('PublicPatientVideos - patientId from URL:', patientId);
     loadPatientData();
     loadVideos();
   }, [patientId]);
 
   const loadPatientData = () => {
-    if (!patientId) return;
+    if (!patientId) {
+      console.log('PublicPatientVideos - No patientId provided');
+      return;
+    }
     
     const patients = JSON.parse(localStorage.getItem('cinebaby_patients') || '[]');
+    console.log('PublicPatientVideos - All patients in localStorage:', patients);
+    console.log('PublicPatientVideos - Looking for patient with ID:', patientId);
+    
     const foundPatient = patients.find((p: Patient) => p.id === patientId);
+    console.log('PublicPatientVideos - Found patient:', foundPatient);
     
     if (foundPatient) {
       setPatient(foundPatient);
@@ -34,11 +41,14 @@ const PublicPatientVideos: React.FC = () => {
     if (!patientId) return;
     
     const allVideos = JSON.parse(localStorage.getItem('cinebaby_videos') || '[]');
+    console.log('PublicPatientVideos - All videos in localStorage:', allVideos);
     const patientVideos = allVideos.filter((v: Video) => v.patientId === patientId);
+    console.log('PublicPatientVideos - Patient videos:', patientVideos);
     setVideos(patientVideos);
   };
 
   const handlePlayVideo = (video: Video) => {
+    console.log('PublicPatientVideos - Playing video:', video.fileName, 'URL:', video.fileUrl);
     setSelectedVideo(video);
     setIsVideoPlayerOpen(true);
   };
@@ -66,6 +76,9 @@ const PublicPatientVideos: React.FC = () => {
             </h2>
             <p className="text-gray-600">
               Não foi possível encontrar os dados desta paciente.
+            </p>
+            <p className="text-sm text-gray-500 mt-2">
+              ID procurado: {patientId}
             </p>
           </CardContent>
         </Card>
@@ -187,12 +200,13 @@ const PublicPatientVideos: React.FC = () => {
                 key={selectedVideo.id}
                 src={selectedVideo.fileUrl} 
                 controls 
+                autoPlay
                 className="w-full h-full"
                 preload="metadata"
-                onLoadStart={() => console.log('Video loading started')}
-                onCanPlay={() => console.log('Video can play')}
-                onError={(e) => console.error('Video error:', e)}
-                onLoadedData={() => console.log('Video data loaded')}
+                onLoadStart={() => console.log('PublicPatientVideos - Video loading started')}
+                onCanPlay={() => console.log('PublicPatientVideos - Video can play')}
+                onError={(e) => console.error('PublicPatientVideos - Video error:', e)}
+                onLoadedData={() => console.log('PublicPatientVideos - Video data loaded')}
               >
                 Seu navegador não suporta a reprodução de vídeo.
               </video>
