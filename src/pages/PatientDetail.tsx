@@ -130,9 +130,13 @@ const PatientDetail: React.FC = () => {
   const generateQRCode = () => {
     if (!patient) return;
     
-    const qrUrl = `${window.location.origin}/patient/${patient.id}/videos`;
+    // Garantir que o QR Code aponte para a URL correta
+    const baseUrl = window.location.origin;
+    const qrUrl = `${baseUrl}/patient/${patient.id}/videos`;
     
-    // Simular geração de QR Code (em produção, usaria uma biblioteca real)
+    console.log('PatientDetail - Generating QR Code for URL:', qrUrl);
+    
+    // Atualizar o paciente com o QR Code URL
     const updatedPatient = { ...patient, qrCode: qrUrl };
     
     const allPatients = JSON.parse(localStorage.getItem('cinebaby_patients') || '[]');
@@ -146,7 +150,7 @@ const PatientDetail: React.FC = () => {
     
     toast({
       title: "QR Code gerado!",
-      description: "O QR Code foi criado com sucesso.",
+      description: "O QR Code foi criado com sucesso e pode ser escaneado no celular.",
     });
   };
 

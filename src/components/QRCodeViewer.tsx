@@ -17,14 +17,19 @@ const QRCodeViewer: React.FC<QRCodeViewerProps> = ({ patient, isOpen, onClose })
 
   if (!patient) return null;
 
-  const qrCodeData = patient.qrCode || `${window.location.origin}/patient/${patient.id}/videos`;
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrCodeData)}`;
+  // Garantir que o link seja sempre correto
+  const baseUrl = window.location.origin;
+  const patientVideoUrl = `${baseUrl}/patient/${patient.id}/videos`;
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(patientVideoUrl)}`;
+
+  console.log('QRCodeViewer - Generated URL for patient videos:', patientVideoUrl);
+  console.log('QRCodeViewer - QR Code URL:', qrCodeUrl);
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(qrCodeData);
+    navigator.clipboard.writeText(patientVideoUrl);
     toast({
       title: "Link copiado!",
-      description: "O link do QR Code foi copiado para a área de transferência.",
+      description: "O link dos vídeos foi copiado para a área de transferência.",
     });
   };
 
@@ -42,6 +47,10 @@ const QRCodeViewer: React.FC<QRCodeViewerProps> = ({ patient, isOpen, onClose })
     });
   };
 
+  const handleTestLink = () => {
+    window.open(patientVideoUrl, '_blank');
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
@@ -51,7 +60,7 @@ const QRCodeViewer: React.FC<QRCodeViewerProps> = ({ patient, isOpen, onClose })
             QR Code - {patient.name}
           </DialogTitle>
           <DialogDescription>
-            Use este QR Code para acessar os vídeos da paciente
+            Use este QR Code para acessar os vídeos da paciente no celular
           </DialogDescription>
         </DialogHeader>
 
@@ -97,10 +106,18 @@ const QRCodeViewer: React.FC<QRCodeViewerProps> = ({ patient, isOpen, onClose })
             </Button>
           </div>
 
+          {/* Test Button */}
+          <Button
+            onClick={handleTestLink}
+            className="w-full bg-cinebaby-gradient hover:opacity-90"
+          >
+            Testar Link
+          </Button>
+
           {/* Link Display */}
           <div className="p-3 bg-gray-50 rounded-lg">
-            <p className="text-xs text-gray-600 mb-1">Link do QR Code:</p>
-            <p className="text-sm font-mono text-gray-800 break-all">{qrCodeData}</p>
+            <p className="text-xs text-gray-600 mb-1">Link dos vídeos:</p>
+            <p className="text-sm font-mono text-gray-800 break-all">{patientVideoUrl}</p>
           </div>
         </div>
       </DialogContent>
