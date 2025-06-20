@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ArrowLeft, Upload, Play, Trash2, QrCode, Printer, User, Phone, Calendar } from 'lucide-react';
+import { ArrowLeft, Upload, Play, Trash2, QrCode, Printer, User, Phone, Calendar, X } from 'lucide-react';
 import { Patient, Video } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -21,6 +21,8 @@ const PatientDetail: React.FC = () => {
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [isQRViewerOpen, setIsQRViewerOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
+  const [isVideoPlayerOpen, setIsVideoPlayerOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -60,11 +62,14 @@ const PatientDetail: React.FC = () => {
     
     if (!selectedFile || !patientId) return;
 
+    // Create a blob URL for the video file
+    const videoUrl = URL.createObjectURL(selectedFile);
+
     const newVideo: Video = {
       id: Date.now().toString(),
       patientId,
       fileName: selectedFile.name,
-      fileUrl: URL.createObjectURL(selectedFile),
+      fileUrl: videoUrl,
       uploadedAt: new Date().toISOString()
     };
 
@@ -96,6 +101,12 @@ const PatientDetail: React.FC = () => {
       description: "O vídeo foi removido com sucesso.",
       variant: "destructive"
     });
+  };
+
+  const handlePlayVideo = (video: Video) => {
+    console.log('Playing video:', video.fileName, 'URL:', video.fileUrl);
+    setSelectedVideo(video);
+    setIsVideoPlayerOpen(true);
   };
 
   const generateQRCode = () => {
@@ -320,15 +331,34 @@ const PatientDetail: React.FC = () => {
                 {videos.map((video) => (
                   <Card key={video.id} className="hover:shadow-md transition-shadow">
                     <CardContent className="p-4">
-                      <div className="aspect-video bg-gray-100 rounded-lg mb-3 flex items-center justify-center">
-                        <Play className="h-8 w-8 text-gray-400" />
+                      <div className="aspect-video bg-gray-100 rounded-lg mb-3 flex items-center justify-center relative overflow-hidden">
+                        {video.fileUrl ? (
+                          <video 
+                            src={video.fileUrl} 
+                            className="w-full h-full object-cover"
+                            poster=""
+                            preload="metadata"
+                          />
+                        ) : (
+                          <Play className="h-8 w-8 text-gray-400" />
+                        )}
+                        <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                          <Play className="h-8 w-8 text-white" />
+                        </div>
                       </div>
-                      <h4 className="font-medium text-sm mb-2 truncate">{video.fileName}</h4>
+                      <h4 className="font-medium text-sm mb-2 truncate" title={video.fileName}>
+                        {video.fileName}
+                      </h4>
                       <p className="text-xs text-gray-500 mb-3">
                         {formatDate(video.uploadedAt)}
                       </p>
                       <div className="flex gap-2">
-                        <Button size="sm" variant="outline" className="flex-1">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="flex-1"
+                          onClick={() => handlePlayVideo(video)}
+                        >
                           <Play className="h-3 w-3 mr-1" />
                           Ver
                         </Button>
@@ -348,6 +378,40 @@ const PatientDetail: React.FC = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Video Player Dialog */}
+        <Dialog open={isVideoPlayerOpen} onOpenChange={setIsVideoPlayerOpen}>
+          <DialogContent className="max-w-4xl">
+            <DialogHeader>
+              <div className="flex items-center justify-between">
+                <DialogTitle>{selectedVideo?.fileName}</DialogTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsVideoPlayerOpen(false)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              <DialogDescription>
+                Vídeo de ultrassom - {selectedVideo && formatDate(selectedVideo.uploadedAt)}
+              </DialogDescription>
+            </DialogHeader>
+            
+            {selectedVideo && (
+              <div className="aspect-video bg-black rounded-lg overflow-hidden">
+                <video 
+                  src={selectedVideo.fileUrl} 
+                  controls 
+                  className="w-full h-full"
+                  autoPlay
+                >
+                  Seu navegador não suporta a reprodução de vídeo.
+                </video>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
 
         {/* QR Code Viewer Dialog */}
         <QRCodeViewer
