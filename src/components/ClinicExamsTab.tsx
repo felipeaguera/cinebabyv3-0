@@ -19,8 +19,8 @@ const ClinicExamsTab: React.FC<ClinicExamsTabProps> = ({ videos, setVideos, pati
 
   // Filtrar vídeos apenas da clínica atual
   const clinicVideos = videos.filter(video => {
-    const patient = patients.find(p => p.id === video.patientId);
-    return patient?.clinicId === clinicId;
+    const patient = patients.find(p => p.id === video.patient_id);
+    return patient?.clinic_id === clinicId;
   });
 
   const handleDeleteVideo = (videoId: string) => {
@@ -94,9 +94,9 @@ const ClinicExamsTab: React.FC<ClinicExamsTabProps> = ({ videos, setVideos, pati
                       <div className="flex items-center">
                         <Play className="h-4 w-4 mr-2 text-cinebaby-turquoise" />
                         <div>
-                          <p className="font-medium">{video.fileName}</p>
+                          <p className="font-medium">{video.file_name}</p>
                           <a 
-                            href={video.fileUrl} 
+                            href={video.file_url} 
                             target="_blank" 
                             rel="noopener noreferrer"
                             className="text-sm text-cinebaby-purple hover:underline"
@@ -109,13 +109,13 @@ const ClinicExamsTab: React.FC<ClinicExamsTabProps> = ({ videos, setVideos, pati
                     <TableCell>
                       <div className="flex items-center">
                         <User className="h-4 w-4 mr-2 text-gray-400" />
-                        {getPatientName(video.patientId)}
+                        {getPatientName(video.patient_id)}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center text-sm text-gray-600">
                         <Calendar className="h-4 w-4 mr-2" />
-                        {formatDate(video.uploadedAt)}
+                        {formatDate(video.uploaded_at)}
                       </div>
                     </TableCell>
                     <TableCell className="text-right">

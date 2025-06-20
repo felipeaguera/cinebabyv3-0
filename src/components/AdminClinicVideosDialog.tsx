@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -27,9 +28,9 @@ const AdminClinicVideosDialog: React.FC<AdminClinicVideosDialogProps> = ({
   const { toast } = useToast();
 
   const clinic = clinics.find(c => c.id === clinicId);
-  const clinicPatients = patients.filter(p => p.clinicId === clinicId);
+  const clinicPatients = patients.filter(p => p.clinic_id === clinicId);
   const clinicVideos = videos.filter(v => 
-    clinicPatients.some(p => p.id === v.patientId)
+    clinicPatients.some(p => p.id === v.patient_id)
   );
 
   const handleDeleteVideo = async (videoId: string) => {
@@ -65,7 +66,7 @@ const AdminClinicVideosDialog: React.FC<AdminClinicVideosDialogProps> = ({
   };
 
   const handlePrintQRCode = (patient: Patient) => {
-    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(patient.qrCode || `patient-${patient.id}`)}`;
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`${window.location.origin}/paciente/${patient.id}`)}`;
     
     const printWindow = window.open('', '_blank');
     if (printWindow) {
@@ -174,16 +175,16 @@ const AdminClinicVideosDialog: React.FC<AdminClinicVideosDialogProps> = ({
               </TableHeader>
               <TableBody>
                 {clinicVideos.map((video) => {
-                  const patient = getPatientById(video.patientId);
+                  const patient = getPatientById(video.patient_id);
                   return (
                     <TableRow key={video.id}>
                       <TableCell>
                         <div className="flex items-center">
                           <Play className="h-4 w-4 mr-2 text-cinebaby-turquoise" />
                           <div>
-                            <p className="font-medium">{video.fileName}</p>
+                            <p className="font-medium">{video.file_name}</p>
                             <a 
-                              href={video.fileUrl} 
+                              href={video.file_url} 
                               target="_blank" 
                               rel="noopener noreferrer"
                               className="text-sm text-cinebaby-purple hover:underline"
@@ -197,7 +198,7 @@ const AdminClinicVideosDialog: React.FC<AdminClinicVideosDialogProps> = ({
                         <div className="flex items-center">
                           <User className="h-4 w-4 mr-2 text-gray-400" />
                           <div>
-                            <p className="font-medium">{getPatientName(video.patientId)}</p>
+                            <p className="font-medium">{getPatientName(video.patient_id)}</p>
                             {patient && (
                               <p className="text-sm text-gray-500">{patient.phone}</p>
                             )}
@@ -207,7 +208,7 @@ const AdminClinicVideosDialog: React.FC<AdminClinicVideosDialogProps> = ({
                       <TableCell>
                         <div className="flex items-center text-sm text-gray-600">
                           <Calendar className="h-4 w-4 mr-2" />
-                          {formatDate(video.uploadedAt)}
+                          {formatDate(video.uploaded_at)}
                         </div>
                       </TableCell>
                       <TableCell className="text-right">

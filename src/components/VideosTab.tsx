@@ -34,8 +34,8 @@ const VideosTab: React.FC<VideosTabProps> = ({ videos, setVideos, patients, clin
   };
 
   const getVideoDetails = (video: VideoType) => {
-    const patient = patients.find(p => p.id === video.patientId);
-    const clinic = patient ? clinics.find(c => c.id === patient.clinicId) : null;
+    const patient = patients.find(p => p.id === video.patient_id);
+    const clinic = patient ? clinics.find(c => c.id === patient.clinic_id) : null;
     
     return {
       patient: patient?.name || 'Paciente não encontrada',
@@ -97,9 +97,9 @@ const VideosTab: React.FC<VideosTabProps> = ({ videos, setVideos, patients, clin
                         <div className="flex items-center">
                           <Play className="h-4 w-4 mr-2 text-cinebaby-turquoise" />
                           <div>
-                            <p className="font-medium">{video.fileName}</p>
+                            <p className="font-medium">{video.file_name}</p>
                             <a 
-                              href={video.fileUrl} 
+                              href={video.file_url} 
                               target="_blank" 
                               rel="noopener noreferrer"
                               className="text-sm text-cinebaby-purple hover:underline"
@@ -129,7 +129,7 @@ const VideosTab: React.FC<VideosTabProps> = ({ videos, setVideos, patients, clin
                       <TableCell>
                         <div className="flex items-center text-sm text-gray-600">
                           <Calendar className="h-4 w-4 mr-2" />
-                          {formatDate(video.uploadedAt)}
+                          {formatDate(video.uploaded_at)}
                         </div>
                       </TableCell>
                       <TableCell className="text-right">

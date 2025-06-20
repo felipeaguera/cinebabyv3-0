@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -56,13 +57,7 @@ const PatientDetail: React.FC = () => {
         const localPatient = patients.find((p: Patient) => p.id === patientId);
         
         if (localPatient) {
-          // Converter para formato Supabase
-          const convertedPatient = {
-            ...localPatient,
-            clinic_id: localPatient.clinicId || localPatient.clinic_id,
-            created_at: localPatient.createdAt || localPatient.created_at
-          };
-          setPatient(convertedPatient);
+          setPatient(localPatient);
         } else {
           navigate(user?.type === 'admin' ? '/admin' : '/clinic');
         }
@@ -122,7 +117,7 @@ const PatientDetail: React.FC = () => {
         console.error('PatientDetail - Error loading videos from IndexedDB:', indexedError);
         // Fallback final para localStorage
         const allVideos = JSON.parse(localStorage.getItem('cinebaby_videos') || '[]');
-        const patientVideos = allVideos.filter((v: Video) => v.patient_id === patientId || v.patientId === patientId);
+        const patientVideos = allVideos.filter((v: Video) => v.patient_id === patientId || (v as any).patientId === patientId);
         setVideos(patientVideos);
       }
     }
@@ -138,10 +133,10 @@ const PatientDetail: React.FC = () => {
     try {
       const newVideo = {
         id: Date.now().toString(),
-        patientId,
-        fileName: selectedFile.name,
+        patient_id: patientId,
+        file_name: selectedFile.name,
         file: selectedFile,
-        uploadedAt: new Date().toISOString()
+        uploaded_at: new Date().toISOString()
       };
 
       await videoStorage.saveVideo(newVideo);
@@ -201,7 +196,7 @@ const PatientDetail: React.FC = () => {
   };
 
   const handlePlayVideo = (video: Video) => {
-    console.log('Playing video:', video.fileName, 'URL:', video.fileUrl);
+    console.log('Playing video:', video.file_name, 'URL:', video.file_url);
     setSelectedVideo(video);
     setIsVideoPlayerOpen(true);
   };
@@ -405,7 +400,7 @@ const PatientDetail: React.FC = () => {
             </div>
             <div className="flex items-center text-gray-600">
               <Calendar className="h-4 w-4 mr-2" />
-              <span>Cadastrada em {formatDate(patient.createdAt)}</span>
+              <span>Cadastrada em {formatDate(patient.created_at)}</span>
             </div>
           </CardContent>
         </Card>
@@ -468,9 +463,9 @@ const PatientDetail: React.FC = () => {
                   <Card key={video.id} className="hover:shadow-md transition-shadow">
                     <CardContent className="p-4">
                       <div className="aspect-video bg-gray-100 rounded-lg mb-3 flex items-center justify-center relative overflow-hidden">
-                        {video.fileUrl ? (
+                        {video.file_url ? (
                           <video 
-                            src={video.fileUrl} 
+                            src={video.file_url} 
                             className="w-full h-full object-cover"
                             poster=""
                             preload="metadata"
@@ -482,11 +477,11 @@ const PatientDetail: React.FC = () => {
                           <Play className="h-8 w-8 text-white" />
                         </div>
                       </div>
-                      <h4 className="font-medium text-sm mb-2 truncate" title={video.fileName}>
-                        {video.fileName}
+                      <h4 className="font-medium text-sm mb-2 truncate" title={video.file_name}>
+                        {video.file_name}
                       </h4>
                       <p className="text-xs text-gray-500 mb-3">
-                        {formatDate(video.uploadedAt)}
+                        {formatDate(video.uploaded_at)}
                       </p>
                       <div className="flex gap-2">
                         <Button 
@@ -520,7 +515,7 @@ const PatientDetail: React.FC = () => {
           <DialogContent className="max-w-4xl">
             <DialogHeader>
               <div className="flex items-center justify-between">
-                <DialogTitle>{selectedVideo?.fileName}</DialogTitle>
+                <DialogTitle>{selectedVideo?.file_name}</DialogTitle>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -530,14 +525,14 @@ const PatientDetail: React.FC = () => {
                 </Button>
               </div>
               <DialogDescription>
-                Vídeo de ultrassom - {selectedVideo && formatDate(selectedVideo.uploadedAt)}
+                Vídeo de ultrassom - {selectedVideo && formatDate(selectedVideo.uploaded_at)}
               </DialogDescription>
             </DialogHeader>
             
             {selectedVideo && (
               <div className="aspect-video bg-black rounded-lg overflow-hidden">
                 <video 
-                  src={selectedVideo.fileUrl} 
+                  src={selectedVideo.file_url} 
                   controls 
                   autoPlay
                   className="w-full h-full"
@@ -546,7 +541,7 @@ const PatientDetail: React.FC = () => {
                   onCanPlay={() => console.log('Video can play')}
                   onError={(e) => {
                     console.error('Video error:', e);
-                    console.error('Video URL that failed:', selectedVideo.fileUrl);
+                    console.error('Video URL that failed:', selectedVideo.file_url);
                   }}
                   onLoadedData={() => console.log('Video data loaded')}
                 >

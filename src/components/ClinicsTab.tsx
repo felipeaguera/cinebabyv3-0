@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,7 +37,7 @@ const ClinicsTab: React.FC<ClinicsTabProps> = ({
 
     try {
       // Get all patients from this clinic
-      const clinicPatients = patients.filter(p => p.clinicId === clinicId);
+      const clinicPatients = patients.filter(p => p.clinic_id === clinicId);
       const clinicPatientIds = clinicPatients.map(p => p.id);
       
       console.log(`Deleting clinic ${clinicId} with ${clinicPatients.length} patients and their videos`);
@@ -46,12 +47,12 @@ const ClinicsTab: React.FC<ClinicsTabProps> = ({
 
       // Remove videos from localStorage as fallback cleanup
       const allVideos = JSON.parse(localStorage.getItem('cinebaby_videos') || '[]');
-      const updatedVideos = allVideos.filter((v: VideoType) => !clinicPatientIds.includes(v.patientId));
+      const updatedVideos = allVideos.filter((v: VideoType) => !clinicPatientIds.includes(v.patient_id));
       localStorage.setItem('cinebaby_videos', JSON.stringify(updatedVideos));
       setVideos(updatedVideos);
 
       // Remove patients from this clinic
-      const updatedPatients = patients.filter(p => p.clinicId !== clinicId);
+      const updatedPatients = patients.filter(p => p.clinic_id !== clinicId);
       setPatients(updatedPatients);
       localStorage.setItem('cinebaby_patients', JSON.stringify(updatedPatients));
 
@@ -78,9 +79,9 @@ const ClinicsTab: React.FC<ClinicsTabProps> = ({
   };
 
   const getClinicStats = (clinicId: string) => {
-    const clinicPatients = patients.filter(p => p.clinicId === clinicId);
+    const clinicPatients = patients.filter(p => p.clinic_id === clinicId);
     const clinicVideos = videos.filter(v => 
-      clinicPatients.some(p => p.id === v.patientId)
+      clinicPatients.some(p => p.id === v.patient_id)
     );
     
     return {
@@ -176,7 +177,7 @@ const ClinicsTab: React.FC<ClinicsTabProps> = ({
                       <TableCell>
                         <div className="flex items-center text-sm text-gray-600">
                           <Calendar className="h-4 w-4 mr-2" />
-                          {formatDate(clinic.createdAt)}
+                          {formatDate(clinic.created_at)}
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
