@@ -17,7 +17,37 @@ const QRCodeViewer: React.FC<QRCodeViewerProps> = ({ patient, isOpen, onClose })
 
   if (!patient) return null;
 
-  // Usar o ID UUID real do paciente para gerar o link
+  // Verificar se o ID é um UUID válido
+  const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(patient.id);
+  
+  if (!isValidUUID) {
+    console.error('QRCodeViewer - Invalid UUID format:', patient.id);
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center text-red-600">
+              <QrCode className="h-5 w-5 mr-2" />
+              Erro no QR Code
+            </DialogTitle>
+            <DialogDescription>
+              ID da paciente inválido. Por favor, verifique os dados da paciente.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="text-center p-4">
+            <p className="text-sm text-gray-600 mb-4">
+              O ID da paciente não está no formato UUID válido.
+            </p>
+            <p className="text-xs text-gray-500 font-mono break-all">
+              ID atual: {patient.id}
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // Usar o UUID real do paciente para gerar o link
   const baseUrl = window.location.origin;
   const patientVideoUrl = `${baseUrl}/paciente/${patient.id}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(patientVideoUrl)}`;

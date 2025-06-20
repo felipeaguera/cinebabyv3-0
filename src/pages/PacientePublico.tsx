@@ -19,7 +19,18 @@ const PacientePublico: React.FC = () => {
 
   useEffect(() => {
     console.log('PacientePublico - Patient UUID from URL:', id);
+    
+    // Verificar se o ID da URL é um UUID válido
     if (id) {
+      const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+      
+      if (!isValidUUID) {
+        console.log('PacientePublico - Invalid UUID format:', id);
+        setError('ID da paciente inválido');
+        setLoading(false);
+        return;
+      }
+      
       loadPatientAndVideos();
     } else {
       setError('ID da paciente não fornecido');
@@ -44,7 +55,8 @@ const PacientePublico: React.FC = () => {
       const patients = JSON.parse(localStorage.getItem('cinebaby_patients') || '[]');
       console.log('PacientePublico - Searching for patient with UUID:', id);
       
-      const foundPatient = patients.find((p: Patient) => String(p.id) === String(id));
+      // Buscar paciente pelo UUID exato
+      const foundPatient = patients.find((p: Patient) => p.id === id);
       
       if (foundPatient) {
         console.log('PacientePublico - Patient found:', foundPatient);
@@ -54,6 +66,7 @@ const PacientePublico: React.FC = () => {
         await loadVideos(id);
       } else {
         console.log('PacientePublico - Patient not found with UUID:', id);
+        console.log('PacientePublico - Available patients:', patients.map(p => ({ id: p.id, name: p.name })));
         setError('Paciente não encontrada');
       }
     } catch (error) {
@@ -74,7 +87,7 @@ const PacientePublico: React.FC = () => {
       
       // Por enquanto, buscar no localStorage e IndexedDB como fallback
       const allVideos = JSON.parse(localStorage.getItem('cinebaby_videos') || '[]');
-      const patientVideos = allVideos.filter((v: Video) => String(v.patientId) === String(patientId));
+      const patientVideos = allVideos.filter((v: Video) => v.patientId === patientId);
       
       console.log('PacientePublico - Videos found for patient:', patientVideos.length);
       setVideos(patientVideos);

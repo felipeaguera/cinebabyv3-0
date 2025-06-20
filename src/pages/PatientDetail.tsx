@@ -159,11 +159,26 @@ const PatientDetail: React.FC = () => {
   const generateQRCode = () => {
     if (!patient) return;
     
-    // Garantir que o QR Code aponte para a URL correta com o ID UUID da paciente
-    const baseUrl = window.location.origin;
-    const qrUrl = `${baseUrl}/paciente/${patient.id}`;
+    // Garantir que usamos o UUID real da paciente, não um timestamp
+    const patientUUID = patient.id;
     
-    console.log('PatientDetail - Patient UUID:', patient.id);
+    // Verificar se o ID é um UUID válido (formato UUID padrão)
+    const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(patientUUID);
+    
+    if (!isValidUUID) {
+      console.error('PatientDetail - Invalid UUID format:', patientUUID);
+      toast({
+        title: "Erro no QR Code",
+        description: "ID da paciente inválido. Por favor, verifique os dados da paciente.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const baseUrl = window.location.origin;
+    const qrUrl = `${baseUrl}/paciente/${patientUUID}`;
+    
+    console.log('PatientDetail - Patient UUID:', patientUUID);
     console.log('PatientDetail - Generating QR Code for URL:', qrUrl);
     
     // Atualizar o paciente com o QR Code URL
@@ -180,18 +195,32 @@ const PatientDetail: React.FC = () => {
     
     toast({
       title: "QR Code gerado!",
-      description: `Link criado: /paciente/${patient.id}`,
+      description: `Link criado: /paciente/${patientUUID}`,
     });
   };
 
   const printQRCard = () => {
     if (!patient) return;
     
-    // Generate QR code URL usando o ID UUID da paciente
-    const patientVideoUrl = `${window.location.origin}/paciente/${patient.id}`;
+    const patientUUID = patient.id;
+    
+    // Verificar se o ID é um UUID válido
+    const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(patientUUID);
+    
+    if (!isValidUUID) {
+      toast({
+        title: "Erro na impressão",
+        description: "ID da paciente inválido para impressão do cartão.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Generate QR code URL usando o UUID real da paciente
+    const patientVideoUrl = `${window.location.origin}/paciente/${patientUUID}`;
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(patientVideoUrl)}`;
     
-    console.log('PatientDetail - Printing QR Card for patient UUID:', patient.id);
+    console.log('PatientDetail - Printing QR Card for patient UUID:', patientUUID);
     console.log('PatientDetail - QR Card URL:', patientVideoUrl);
     
     const printWindow = window.open('', '_blank');
