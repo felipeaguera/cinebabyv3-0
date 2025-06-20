@@ -32,3 +32,12 @@ export interface Video {
   file_url: string;
   uploaded_at: string;
 }
+
+export interface VideoData {
+  id: string;
+  patient_id: string;
+  file_name: string;
+  uploaded_at: string;
+  file?: File;
+  file_url?: string;
+}

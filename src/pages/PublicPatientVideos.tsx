@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Play, Heart, X, Smartphone } from 'lucide-react';
-import { Patient, Video } from '@/types';
+import { Patient, Video, VideoData } from '@/types';
 import { videoStorage } from '@/utils/videoStorage';
 
 const PublicPatientVideos: React.FC = () => {
@@ -73,14 +73,16 @@ const PublicPatientVideos: React.FC = () => {
       const patientVideos = await videoStorage.getVideosByPatient(patientId);
       console.log('PublicPatientVideos - Patient videos from IndexedDB:', patientVideos);
       
-      // Filter valid videos with URLs
-      const validVideos = patientVideos.filter((video: Video) => {
-        const isValid = video.file_url && video.file_url.trim() !== '';
-        if (!isValid) {
-          console.log('PublicPatientVideos - Invalid video URL for video:', video.file_name);
-        }
-        return isValid;
-      });
+      // Convert VideoData to Video format, filtering out incomplete entries
+      const validVideos: Video[] = patientVideos
+        .filter((video: VideoData) => video.file_url && video.file_url.trim() !== '')
+        .map((video: VideoData) => ({
+          id: video.id,
+          patient_id: video.patient_id,
+          file_name: video.file_name,
+          file_url: video.file_url!,
+          uploaded_at: video.uploaded_at
+        }));
       
       console.log('PublicPatientVideos - Valid videos found:', validVideos.length);
       setVideos(validVideos);
@@ -93,7 +95,7 @@ const PublicPatientVideos: React.FC = () => {
         console.log('PublicPatientVideos - All videos in localStorage:', allVideos);
         
         // Search for videos by patient ID with improved comparison
-        const patientVideos = allVideos.filter((v: Video) => {
+        const patientVideos = allVideos.filter((v: any) => {
           const videoPatientIdStr = String(v.patient_id);
           const searchIdStr = String(patientId);
           const matches = videoPatientIdStr === searchIdStr;
@@ -106,14 +108,16 @@ const PublicPatientVideos: React.FC = () => {
         
         console.log('PublicPatientVideos - Patient videos from localStorage:', patientVideos);
         
-        // Filter valid videos with URLs
-        const validVideos = patientVideos.filter((video: Video) => {
-          const isValid = video.file_url && video.file_url.trim() !== '';
-          if (!isValid) {
-            console.log('PublicPatientVideos - Invalid video URL for video:', video.file_name);
-          }
-          return isValid;
-        });
+        // Convert to Video format, filtering out incomplete entries
+        const validVideos: Video[] = patientVideos
+          .filter((video: any) => video.file_url && video.file_url.trim() !== '')
+          .map((video: any) => ({
+            id: video.id,
+            patient_id: video.patient_id,
+            file_name: video.file_name,
+            file_url: video.file_url,
+            uploaded_at: video.uploaded_at
+          }));
         
         console.log('PublicPatientVideos - Valid videos from localStorage:', validVideos.length);
         setVideos(validVideos);
