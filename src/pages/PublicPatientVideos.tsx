@@ -73,11 +73,11 @@ const PublicPatientVideos: React.FC = () => {
       const patientVideos = await videoStorage.getVideosByPatient(patientId);
       console.log('PublicPatientVideos - Patient videos from IndexedDB:', patientVideos);
       
-      // Filtrar apenas vídeos com URLs válidas
+      // Filter valid videos with URLs
       const validVideos = patientVideos.filter((video: Video) => {
-        const isValid = video.fileUrl && video.fileUrl.trim() !== '';
+        const isValid = video.file_url && video.file_url.trim() !== '';
         if (!isValid) {
-          console.log('PublicPatientVideos - Invalid video URL for video:', video.fileName);
+          console.log('PublicPatientVideos - Invalid video URL for video:', video.file_name);
         }
         return isValid;
       });
@@ -92,9 +92,9 @@ const PublicPatientVideos: React.FC = () => {
         const allVideos = JSON.parse(localStorage.getItem('cinebaby_videos') || '[]');
         console.log('PublicPatientVideos - All videos in localStorage:', allVideos);
         
-        // Buscar vídeos por ID da paciente com comparação melhorada
+        // Search for videos by patient ID with improved comparison
         const patientVideos = allVideos.filter((v: Video) => {
-          const videoPatientIdStr = String(v.patientId);
+          const videoPatientIdStr = String(v.patient_id);
           const searchIdStr = String(patientId);
           const matches = videoPatientIdStr === searchIdStr;
           
@@ -106,11 +106,11 @@ const PublicPatientVideos: React.FC = () => {
         
         console.log('PublicPatientVideos - Patient videos from localStorage:', patientVideos);
         
-        // Filtrar apenas vídeos com URLs válidas
+        // Filter valid videos with URLs
         const validVideos = patientVideos.filter((video: Video) => {
-          const isValid = video.fileUrl && video.fileUrl.trim() !== '';
+          const isValid = video.file_url && video.file_url.trim() !== '';
           if (!isValid) {
-            console.log('PublicPatientVideos - Invalid video URL for video:', video.fileName);
+            console.log('PublicPatientVideos - Invalid video URL for video:', video.file_name);
           }
           return isValid;
         });
@@ -124,10 +124,10 @@ const PublicPatientVideos: React.FC = () => {
   };
 
   const handlePlayVideo = (video: Video) => {
-    console.log('PublicPatientVideos - Playing video:', video.fileName, 'URL:', video.fileUrl);
+    console.log('PublicPatientVideos - Playing video:', video.file_name, 'URL:', video.file_url);
     
-    // Verificar se a URL do vídeo ainda é válida
-    if (!video.fileUrl || video.fileUrl.trim() === '') {
+    // Check if video URL is still valid
+    if (!video.file_url || video.file_url.trim() === '') {
       console.error('PublicPatientVideos - Invalid video URL');
       return;
     }
@@ -193,7 +193,7 @@ const PublicPatientVideos: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-cinebaby-purple/5 to-cinebaby-teal/5">
-      {/* Header - Otimizado para mobile */}
+      {/* Header - Optimized for mobile */}
       <div className="bg-white shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-4 sm:py-6">
           <div className="text-center">
@@ -216,7 +216,7 @@ const PublicPatientVideos: React.FC = () => {
         </div>
       </div>
 
-      {/* Content - Layout responsivo */}
+      {/* Content - Responsive layout */}
       <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
         <Card className="shadow-lg">
           <CardHeader className="pb-3 sm:pb-6">
@@ -253,11 +253,11 @@ const PublicPatientVideos: React.FC = () => {
                         </div>
                         <Play className="h-8 w-8 sm:h-12 sm:w-12 text-cinebaby-purple" />
                       </div>
-                      <h4 className="font-medium mb-1 sm:mb-2 text-sm sm:text-base text-center" title={video.fileName}>
+                      <h4 className="font-medium mb-1 sm:mb-2 text-sm sm:text-base text-center" title={video.file_name}>
                         Vídeo do Ultrassom
                       </h4>
                       <p className="text-xs sm:text-sm text-gray-500 text-center">
-                        {formatDate(video.uploadedAt)}
+                        {formatDate(video.uploaded_at)}
                       </p>
                     </CardContent>
                   </Card>
@@ -267,7 +267,7 @@ const PublicPatientVideos: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Footer - Compacto para mobile */}
+        {/* Footer - Compact for mobile */}
         <div className="text-center mt-6 sm:mt-8 p-4 sm:p-6 bg-white rounded-lg shadow-sm mx-1 sm:mx-0">
           <p className="text-xs sm:text-sm text-gray-600 italic leading-relaxed">
             "Ver seu bebê antes do nascimento é um carinho que emociona para sempre."
@@ -278,7 +278,7 @@ const PublicPatientVideos: React.FC = () => {
         </div>
       </div>
 
-      {/* Video Player Dialog - Otimizado para mobile */}
+      {/* Video Player Dialog - Optimized for mobile */}
       <Dialog open={isVideoPlayerOpen} onOpenChange={setIsVideoPlayerOpen}>
         <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[95vh] p-3 sm:p-6">
           <DialogHeader className="pb-3 sm:pb-4">
@@ -294,15 +294,15 @@ const PublicPatientVideos: React.FC = () => {
               </Button>
             </div>
             <DialogDescription className="text-xs sm:text-sm">
-              {selectedVideo && formatDate(selectedVideo.uploadedAt)}
+              {selectedVideo && formatDate(selectedVideo.uploaded_at)}
             </DialogDescription>
           </DialogHeader>
           
           {selectedVideo && (
             <div className="aspect-video bg-black rounded-lg overflow-hidden">
-              {selectedVideo.fileUrl ? (
+              {selectedVideo.file_url ? (
                 <video 
-                  src={selectedVideo.fileUrl} 
+                  src={selectedVideo.file_url} 
                   controls 
                   autoPlay
                   className="w-full h-full"
@@ -312,7 +312,7 @@ const PublicPatientVideos: React.FC = () => {
                   onCanPlay={() => console.log('PublicPatientVideos - Video can play')}
                   onError={(e) => {
                     console.error('PublicPatientVideos - Video error:', e);
-                    console.error('PublicPatientVideos - Video URL that failed:', selectedVideo.fileUrl);
+                    console.error('PublicPatientVideos - Video URL that failed:', selectedVideo.file_url);
                   }}
                   onLoadedData={() => console.log('PublicPatientVideos - Video data loaded')}
                 >

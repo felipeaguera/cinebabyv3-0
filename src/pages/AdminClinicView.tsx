@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -67,7 +68,7 @@ const AdminClinicView: React.FC = () => {
     const stored = localStorage.getItem('cinebaby_patients');
     if (stored) {
       const allPatients = JSON.parse(stored);
-      const clinicPatients = allPatients.filter((p: Patient) => p.clinicId === clinicId);
+      const clinicPatients = allPatients.filter((p: Patient) => p.clinic_id === clinicId);
       setPatients(clinicPatients);
       setFilteredPatients(clinicPatients);
     }
@@ -89,8 +90,8 @@ const AdminClinicView: React.FC = () => {
       id: Date.now().toString(),
       name: formData.name,
       phone: formData.phone,
-      clinicId: clinicId,
-      createdAt: new Date().toISOString()
+      clinic_id: clinicId,
+      created_at: new Date().toISOString()
     };
 
     const allPatients = JSON.parse(localStorage.getItem('cinebaby_patients') || '[]');
@@ -123,12 +124,12 @@ const AdminClinicView: React.FC = () => {
 
     // Remove videos from this patient
     const allVideos = JSON.parse(localStorage.getItem('cinebaby_videos') || '[]');
-    const updatedVideos = allVideos.filter((v: VideoType) => v.patientId !== patientId);
+    const updatedVideos = allVideos.filter((v: VideoType) => v.patient_id !== patientId);
     localStorage.setItem('cinebaby_videos', JSON.stringify(updatedVideos));
 
     // Update local state
     setPatients(patients.filter(p => p.id !== patientId));
-    setVideos(videos.filter(v => v.patientId !== patientId));
+    setVideos(videos.filter(v => v.patient_id !== patientId));
 
     toast({
       title: "Paciente excluída!",
@@ -142,7 +143,7 @@ const AdminClinicView: React.FC = () => {
   };
 
   const getPatientVideoCount = (patientId: string) => {
-    return videos.filter((v: VideoType) => v.patientId === patientId).length;
+    return videos.filter((v: VideoType) => v.patient_id === patientId).length;
   };
 
   if (!clinic) {
@@ -315,7 +316,7 @@ const AdminClinicView: React.FC = () => {
                           <TableCell>
                             <div className="flex items-center text-sm text-gray-600">
                               <Calendar className="h-4 w-4 mr-2" />
-                              {formatDate(patient.createdAt)}
+                              {formatDate(patient.created_at)}
                             </div>
                           </TableCell>
                           <TableCell className="text-right">

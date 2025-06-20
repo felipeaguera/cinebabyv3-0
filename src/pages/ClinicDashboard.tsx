@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import Layout from '@/components/Layout';
@@ -51,7 +52,7 @@ const ClinicDashboard: React.FC = () => {
     const stored = localStorage.getItem('cinebaby_patients');
     if (stored) {
       const allPatients = JSON.parse(stored);
-      const clinicPatients = allPatients.filter((p: Patient) => p.clinicId === user.clinicId);
+      const clinicPatients = allPatients.filter((p: Patient) => p.clinic_id === user.clinicId);
       setPatients(clinicPatients);
       setFilteredPatients(clinicPatients);
     }
@@ -73,8 +74,8 @@ const ClinicDashboard: React.FC = () => {
       id: Date.now().toString(),
       name: formData.name,
       phone: formData.phone,
-      clinicId: user.clinicId,
-      createdAt: new Date().toISOString()
+      clinic_id: user.clinicId,
+      created_at: new Date().toISOString()
     };
 
     const allPatients = JSON.parse(localStorage.getItem('cinebaby_patients') || '[]');
@@ -100,7 +101,7 @@ const ClinicDashboard: React.FC = () => {
   };
 
   const getPatientVideoCount = (patientId: string) => {
-    return videos.filter((v: VideoType) => v.patientId === patientId).length;
+    return videos.filter((v: VideoType) => v.patient_id === patientId).length;
   };
 
   return (
@@ -246,7 +247,7 @@ const ClinicDashboard: React.FC = () => {
                           <TableCell>
                             <div className="flex items-center text-sm text-gray-600">
                               <Calendar className="h-4 w-4 mr-2" />
-                              {formatDate(patient.createdAt)}
+                              {formatDate(patient.created_at)}
                             </div>
                           </TableCell>
                           <TableCell className="text-right">
